@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -16,10 +16,10 @@ trait LoopsExp extends Loops with BaseExp with EffectExp {
     val v: Sym[Int]
     val body: Def[A]
   }
-  
+
   case class SimpleLoop[A](val size: Exp[Int], val v: Sym[Int], val body: Def[A]) extends AbstractLoop[A]
-  
-  def simpleLoop[A:Typ](size: Exp[Int], v: Sym[Int], body: Def[A])(implicit pos: SourceContext): Exp[A] = SimpleLoop(size, v, body)
+
+  def simpleLoop[A: Typ: Nul](size: Exp[Int], v: Sym[Int], body: Def[A])(implicit pos: SourceContext): Exp[A] = SimpleLoop(size, v, body)
 
 
   override def syms(e: Any): List[Sym[Any]] = e match {
@@ -46,9 +46,9 @@ trait LoopsExp extends Loops with BaseExp with EffectExp {
   //////////////
   // mirroring
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case SimpleLoop(s,v,body: Def[A]) => simpleLoop(f(s),f(v).asInstanceOf[Sym[Int]],mirrorFatDef(body,f))
-    case Reflect(SimpleLoop(s,v,body: Def[A]), u, es) if u == Control() => reflectMirrored(Reflect(SimpleLoop(f(s),f(v).asInstanceOf[Sym[Int]],mirrorFatDef(body,f)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos) 
+    case Reflect(SimpleLoop(s,v,body: Def[A]), u, es) if u == Control() => reflectMirrored(Reflect(SimpleLoop(f(s),f(v).asInstanceOf[Sym[Int]],mirrorFatDef(body,f)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]] // why??
 
@@ -83,7 +83,7 @@ trait LoopsFatExp extends LoopsExp with BaseFatExp {
     val v: Sym[Int]
     val body: List[Def[Any]]
   }
-  
+
   case class SimpleFatLoop(val size: Exp[Int], val v: Sym[Int], val body: List[Def[Any]]) extends AbstractFatLoop
 
 
@@ -91,8 +91,8 @@ trait LoopsFatExp extends LoopsExp with BaseFatExp {
     case e: AbstractFatLoop => syms(e.size) ::: syms(e.body)
     case _ => super.syms(e)
   }
-  
-  override def readSyms(e: Any): List[Sym[Any]] = e match { 
+
+  override def readSyms(e: Any): List[Sym[Any]] = e match {
     case e: AbstractFatLoop => readSyms(e.size) ::: readSyms(e.body)
     case _ => super.readSyms(e)
   }
@@ -144,7 +144,7 @@ trait BaseLoopsTraversalFat extends FatBlockTraversal {
       TTP(List(sym), List(p), SimpleFatLoop(op.size, op.v, List(op.body)))
     case _ => super.fatten(e)
   }
-  
+
 }
 
 trait BaseGenLoops extends GenericNestedCodegen {
@@ -180,10 +180,11 @@ trait CGenLoops extends CGenBase with CLikeGenLoops
 trait CGenLoopsFat extends CGenLoops with CGenFat with CLikeGenLoopsFat
 
 trait GPUGenLoops extends GPUGenBase with CLikeGenLoops
-trait GPUGenLoopsFat extends GPUGenLoops with GPUGenFat with CLikeGenLoopsFat 
+trait GPUGenLoopsFat extends GPUGenLoops with GPUGenFat with CLikeGenLoopsFat
 
 trait CudaGenLoops extends CudaGenBase with GPUGenLoops
 trait CudaGenLoopsFat extends CudaGenLoops with CudaGenFat with GPUGenLoopsFat
 
 trait OpenCLGenLoops extends OpenCLGenBase with GPUGenLoops
 trait OpenCLGenLoopsFat extends OpenCLGenLoops with OpenCLGenFat with GPUGenLoopsFat
+*/

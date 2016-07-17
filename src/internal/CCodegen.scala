@@ -24,7 +24,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
     m.toString match {
       case "java.lang.String" => "string"
       case _ => super.remap(m)
-    }    
+    }
   }
 
   // we treat string as a primitive type to prevent memory management on strings
@@ -35,7 +35,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
       case _ => super.isPrimitiveType(tpe)
     }
   }
-  
+
   override def quote(x: Exp[Any]) = x match {
     case Const(s: String) => "string(" + super.quote(x) + ")"
     case _ => super.quote(x)
@@ -100,11 +100,11 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
     super.initializeGenerator(buildDir, args)
   }
 
-  def emitForwardDef[A:Typ](args: List[Typ[_]], functionName: String, out: PrintWriter) = {
+  def emitForwardDef[A: Typ: Nul](args: List[Typ[_]], functionName: String, out: PrintWriter) = {
     out.println(remap(typ[A])+" "+functionName+"("+args.map(a => remap(a)).mkString(", ")+");")
   }
-      
-  def emitSource[A:Typ](args: List[Sym[_]], body: Block[A], functionName: String, out: PrintWriter) = {
+
+  def emitSource[A: Typ: Nul](args: List[Sym[_]], body: Block[A], functionName: String, out: PrintWriter) = {
 
     val sA = remap(typ[A])
 
@@ -121,7 +121,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
 
       // TODO: static data
 
-      //stream.println("class "+className+(if (staticData.isEmpty) "" else "("+staticData.map(p=>"p"+quote(p._1)+":"+p._1.tp).mkString(",")+")")+" 
+      //stream.println("class "+className+(if (staticData.isEmpty) "" else "("+staticData.map(p=>"p"+quote(p._1)+":"+p._1.tp).mkString(",")+")")+"
       //extends (("+args.map(a => remap(a.tp)).mkString(", ")+")=>("+sA+")) {")
 
       stream.println(sA+" "+functionName+"("+args.map(a => remapWithRef(a.tp)+" "+quote(a)).mkString(", ")+") {")
@@ -138,7 +138,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
                      "*******************************************/")
     }
     Nil
-  }  
+  }
 
   override def emitTransferFunctions() {
 
@@ -186,7 +186,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
         }
       }
       catch {
-        case e: GenerationFailedException => 
+        case e: GenerationFailedException =>
           helperFuncStream.flush
           headerStream.flush
         case e: Exception => throw(e)
@@ -213,7 +213,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
 trait CNestedCodegen extends CLikeNestedCodegen with CCodegen {
   val IR: Expressions with Effects
   import IR._
-  
+
 }
 
 trait CFatCodegen extends CLikeFatCodegen with CCodegen {

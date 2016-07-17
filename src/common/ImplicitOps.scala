@@ -11,18 +11,35 @@ trait ImplicitOps extends Base {
    *  As long as a conversion is in scope, it will be invoked in the generated scala code.
    *  Code-gen for other platforms should implement the conversions.
    **/
-  def implicit_convert[X,Y](x: Rep[X])(implicit c: X => Y, mX: Typ[X], mY: Typ[Y], pos: SourceContext) : Rep[Y] // = x.asInstanceOf[Rep[Y]
+  def implicit_convert[X, Y](x: Rep[X])
+                            (implicit c: X => Y,
+                             mX: Typ[X],
+                             mY: Typ[Y],
+                             nX: Nul[X],
+                             nY: Nul[Y],
+                             pos: SourceContext): Rep[Y] // = x.asInstanceOf[Rep[Y]
 }
 
 trait ImplicitOpsExp extends ImplicitOps with BaseExp {
-  case class ImplicitConvert[X,Y](x: Exp[X])(implicit val mX: Typ[X], val mY: Typ[Y]) extends Def[Y]
+  case class ImplicitConvert[X, Y](x: Exp[X])
+                                  (implicit val mX: Typ[X],
+                                  val mY: Typ[Y],
+                                  val nX: Nul[X],
+                                  val nY: Nul[Y]) extends Def[Y]
 
-  def implicit_convert[X,Y](x: Exp[X])(implicit c: X => Y, mX: Typ[X], mY: Typ[Y], pos: SourceContext) : Rep[Y] = {
+  def implicit_convert[X,Y](x: Exp[X])
+                           (implicit c: X => Y,
+                            mX: Typ[X],
+                            mY: Typ[Y],
+                            nX: Nul[X],
+                            nY: Nul[Y],
+                            pos: SourceContext): Rep[Y] = {
     if (mX == mY) x.asInstanceOf[Rep[Y]] else ImplicitConvert[X,Y](x)
   }
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
-    case im@ImplicitConvert(x) => toAtom(ImplicitConvert(f(x))(im.mX,im.mY))(mtype(manifest[A]),pos)
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+    case im @ ImplicitConvert(x) =>
+      toAtom(ImplicitConvert(f(x))(im.mX, im.mY, im.nX, im.nY))(mtype(manifest[A]), ntype(nul[A]), pos)
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]]
 

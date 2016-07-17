@@ -1,29 +1,32 @@
-# Use Docker-based container (instead of OpenVZ)
-sudo: false
-
 language: scala
 
 scala:
-  - 2.11.2
+- 2.11.2
 
-cache:
-  directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot
-
-# Q: should we use sbt ++$TRAVIS_SCALA_VERSION test?
-
+# we only compile, we don't have any tests for the moment
 script:
-  - sbt clean coverage test && sbt coverageAggregate
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.sbt -name "*.lock" | xargs rm
-  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+- sbt ++$TRAVIS_SCALA_VERSION "compile" "publishOnlyWhenOnMaster"
 
-after_success:
-  - sbt coveralls
-  - "[[ $TRAVIS_PULL_REQUEST == 'false' && $TRAVIS_BRANCH == 'develop'* ]] && sbt publish"
+jdk:
+- oraclejdk8
 
 env:
   global:
-  - secure: X+7udElsP9vnDvz8zM+0rESZQE5rCin4Iw7S0ZqaIgZth1RM+vdmFpOtV7j/YeBtJnpL1s7z9xWpnAf1PzCESp8JrApvHmxyzXC5yRYki0tf8bb9jWJmkNP8ZRAiwe1uSLwhtGGST6kMjuIBjbTlCoizhqu7/abvwZNUYn37Afs=
-  - secure: huTySCqcSt7gBI3I8GTWZDW9wh9aMxqQWl4AwV+jewh0s4jIn++oHUJ5HmKMBOXkkcrA3fxaaI0iwAodBJ/A5nH0Ge1tx0mW1JSYikDbkMNKNvooy0R6qZziACjrJ+7ooxnP/g2g3MrSskGkkZVX7vsH6cgk5Ai4z6FBhXv0DQA=
+  - SCALAMETA_MAVEN_REALM="Sonatype Nexus Repository Manager"
+  - SCALAMETA_MAVEN_DOMAIN="oss.sonatype.org"
+  - secure: "JRzafKs6rGViD2Tn03ApYHwmYsiDD+sRyy9hZu3CZDhpVWa8nB3oLSqwHJZBUD8596TYKjF5pBjXXazmiICDZ468LH+OXAE8MmIoXnk1xWSBiR8PVZlYYIixOamCfgu6dwAIYSJ+ThKZqzQZyHYVFsrWpxshVpI2Gl+nuqE8NdutO3YuZ7lxUDqt6GogCcRWB1690jLx+uh56VWYevk7DFKPxpClZI4s/8tOqVvtCFfae4C5OWT7UZmGmgCiHqia5Fxuz0hR9MJXe3MZJzGDuzCBP5lUaTyvRqxjF3Dvqq6rQVL4UPlIdYY2smA+4laHsWxBFjRsZW3Pa9IPcZFL31IhzjXxkNB9iKlybI1fD704EgNid7+HxDCLRW1iIBiRPxtF/vPCeRgAw7aDRJNzEqO84CjjvVuo0885uUICaQRilRRO7Nxe46MuzdoOrLNX7hhpC7frr3tUagEip16YepGC2nIwQ+1nxmK9c1julG8pJDgKV2BzTzwUrx7vUiPRd7jjP+TeOybrMnA6J7GcBkJ/W4XlDZObd7zrHXZWdVYXr/AIBLUpNrvCRw08T/9POK5QtVLDi52E23kxGNWILmsajrrt1aj63+4zrkITAvY+xfqi69ew5Aa1t+u0iqDaIRsbIrFugh2RuNMvfQ5hiPIjR8CqPIKHNWsmn9RcSXI="
+  - secure: "OmNYzSFOWNm7mWHWDrUgPwIqCmhp5mAOM4YgTS12dG2NGOgrTWZp6kK+K+WsN1CkQD0wL6tWFsYME7tCms8R346D2MWCB+owLe43y/LMrAMEj+jZDHkiKeMXZ71aDIezVuOzn0k+VH2NsVcaxiJ0tZUPaGkgiaalS8cA4IOE42RVmmeD5Z31XaTX5rLehX4MB8MyAgs60Nl4APrGh72qmkSaMzRaaXAIl8PCqP0rXMoCySEjQijoaxPxfVGZGWH8DTgH+xdY7lx2p4v3YjJ0jkvrjFvszm3aitUTF8yRKh5IAu78lVY3DrMvO6ZWLiid3//ORY6nv49llGFnvVwih+pqyGvACjhWi8U74TPxJnCwWYVQjeGmvLVQy2xtkC36b0W/kiPpST0+H9BajnDVmYWbglPmVAx5tE7/GbavKEvecLdbzGmQOya2LL757IBLukcZCJE07pIcv6g+HAoBUnka+ejhaVaxQ7lcyPcXnOEBq9NinK6ifs7emuaI1dgeGyQz9EZp/QAQsXYwpeqmXOFOkzGeUP+H+G7iwp14ZiecSTqHZ7FYkS1/JqoxVv7X3FmJm0QkvFaiWEkR0XeWTgLQPSaG8vO0hjHGlJwl+xegbbxo4RPY60f1/HA2JZW+ydjV/nLvzn6Lc9uHyvhBHdjZait28KWBWEb/lSmCLTs="
+
+# cache:
+#   directories:
+#     - $HOME/.ivy2/cache
+#     - $HOME/.sbt/boot
+#
+# # Q: should we use sbt ++$TRAVIS_SCALA_VERSION test?
+#
+# script:
+#   - sbt clean coverage test && sbt coverageAggregate
+#   # Tricks to avoid unnecessary cache updates
+#   - find $HOME/.sbt -name "*.lock" | xargs rm
+#   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+#

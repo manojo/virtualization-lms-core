@@ -9,7 +9,7 @@ import reflect.SourceContext
 import java.io.PrintWriter
 
 trait Power1 { this: Arith =>
-  def power(b: Rep[Double], x: Int): Rep[Double] = 
+  def power(b: Rep[Double], x: Int): Rep[Double] =
     if (x == 0) 1.0 else b * power(b, x - 1)
 }
 
@@ -25,11 +25,11 @@ trait Power2 { this: Arith =>
 trait BaseStr extends Base {
   type Rep[+T] = String
   //todo added this to provide required unit implicit conversion
-  implicit def unit[T:Typ](x: T): Rep[T] = x.toString
+  implicit def unit[T: Typ: Nul](x: T): Rep[T] = x.toString
 
   case class Typ[T](m: Manifest[T])
 
-  def typ[T:Typ]: Typ[T] = implicitly[Typ[T]]
+  def typ[T: Typ]: Typ[T] = implicitly[Typ[T]]
 
   implicit def unitTyp: Typ[Unit] = Typ(implicitly)
   implicit def nullTyp: Typ[Null] = Typ(implicitly)
@@ -51,12 +51,12 @@ trait ArithStr extends Arith with BaseStr {
 
 
 class TestPower extends FileDiffSuite {
-  
+
   val prefix = home + "test-out/epfl/test2-"
 
   def testPower = {
     withOutFile(prefix+"power") {
-/*    
+/*
     println {
       val o = new TestPower with ArithRepDirect
       import o._
@@ -68,7 +68,7 @@ class TestPower extends FileDiffSuite {
       import o._
       power(2,4)
     }
-    
+
     println {
       val o = new TestPower with ArithRepString
       import o._
@@ -144,7 +144,7 @@ class TestPower extends FileDiffSuite {
 
 
     {
-      val o = new Power1 with ArithExpOpt with CompileScala { self => 
+      val o = new Power1 with ArithExpOpt with CompileScala { self =>
         val codegen = new ScalaGenFlat with ScalaGenArith { val IR: self.type = self }
       }
       import o._

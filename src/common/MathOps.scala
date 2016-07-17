@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -12,7 +12,7 @@ trait MathOps extends Base with PrimitiveOps {
     def floor(x: Rep[Double])(implicit pos: SourceContext) = math_floor(x)
     def exp(x: Rep[Double])(implicit pos: SourceContext) = math_exp(x)
     def log(x: Rep[Double])(implicit pos: SourceContext) = math_log(x)
-    def log10(x: Rep[Double])(implicit ctx: SourceContext) = math_log10(x)    
+    def log10(x: Rep[Double])(implicit ctx: SourceContext) = math_log10(x)
     def sqrt(x: Rep[Double])(implicit pos: SourceContext) = math_sqrt(x)
     def sin(x: Rep[Double])(implicit pos: SourceContext) = math_sin(x)
     def sinh(x: Rep[Double])(implicit ctx: SourceContext) = math_sinh(x)
@@ -21,7 +21,7 @@ trait MathOps extends Base with PrimitiveOps {
     def cosh(x: Rep[Double])(implicit ctx: SourceContext) = math_cosh(x)
     def acos(x: Rep[Double])(implicit pos: SourceContext) = math_acos(x)
     def tan(x: Rep[Double])(implicit ctx: SourceContext) = math_tan(x)
-    def tanh(x: Rep[Double])(implicit ctx: SourceContext) = math_tanh(x)      
+    def tanh(x: Rep[Double])(implicit ctx: SourceContext) = math_tanh(x)
     def atan(x: Rep[Double])(implicit pos: SourceContext) = math_atan(x)
     def atan2(x: Rep[Double], y: Rep[Double])(implicit pos: SourceContext) = math_atan2(x,y)
     def pow(x: Rep[Double], y: Rep[Double])(implicit pos: SourceContext) = math_pow(x,y)
@@ -36,7 +36,7 @@ trait MathOps extends Base with PrimitiveOps {
   def math_floor(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_exp(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_log(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
-  def math_log10(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]  
+  def math_log10(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]
   def math_sqrt(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_sin(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_sinh(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]
@@ -45,7 +45,7 @@ trait MathOps extends Base with PrimitiveOps {
   def math_cosh(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]
   def math_acos(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_tan(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]
-  def math_tanh(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]    
+  def math_tanh(x: Rep[Double])(implicit ctx: SourceContext): Rep[Double]
   def math_atan(x: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_atan2(x: Rep[Double], y: Rep[Double])(implicit pos: SourceContext) : Rep[Double]
   def math_pow(x: Rep[Double], y: Rep[Double])(implicit pos: SourceContext): Rep[Double]
@@ -70,7 +70,7 @@ trait MathOpsExp extends MathOps with EffectExp {
   case class MathCosh(x: Exp[Double]) extends Def[Double]
   case class MathAcos(x: Exp[Double]) extends Def[Double]
   case class MathTan(x: Exp[Double]) extends Def[Double]
-  case class MathTanh(x: Exp[Double]) extends Def[Double]      
+  case class MathTanh(x: Exp[Double]) extends Def[Double]
   case class MathAtan(x: Exp[Double]) extends Def[Double]
   case class MathAtan2(x: Exp[Double], y: Exp[Double]) extends Def[Double]
   case class MathPow(x: Exp[Double], y: Exp[Double]) extends Def[Double]
@@ -93,7 +93,7 @@ trait MathOpsExp extends MathOps with EffectExp {
   def math_cosh(x: Exp[Double])(implicit ctx: SourceContext) = MathCosh(x)
   def math_acos(x: Exp[Double])(implicit pos: SourceContext) = MathAcos(x)
   def math_tan(x: Exp[Double])(implicit ctx: SourceContext) = MathTan(x)
-  def math_tanh(x: Exp[Double])(implicit ctx: SourceContext) = MathTanh(x)    
+  def math_tanh(x: Exp[Double])(implicit ctx: SourceContext) = MathTanh(x)
   def math_atan(x: Exp[Double])(implicit pos: SourceContext) = MathAtan(x)
   def math_atan2(x: Exp[Double], y: Exp[Double])(implicit pos: SourceContext) = MathAtan2(x,y)
   def math_pow(x: Exp[Double], y: Exp[Double])(implicit pos: SourceContext) = MathPow(x,y)
@@ -101,9 +101,9 @@ trait MathOpsExp extends MathOps with EffectExp {
   def math_max[A:Typ:Numeric](x: Exp[A], y: Exp[A])(implicit pos: SourceContext) = MathMax(x, y)
   def math_min[A:Typ:Numeric](x: Exp[A], y: Exp[A])(implicit pos: SourceContext) = MathMin(x, y)
   def math_pi(implicit pos: SourceContext) = MathPi()
-  def math_e(implicit pos: SourceContext) = MathE()  
+  def math_e(implicit pos: SourceContext) = MathE()
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = ({
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = ({
     implicit var a: Numeric[A] = null // hack!! need to store it in Def instances??
     e match {
       case MathCeil(x) => math_ceil(f(x))
@@ -144,7 +144,7 @@ trait MathOpsExp extends MathOps with EffectExp {
       case Reflect(MathAsin(x), u, es) => reflectMirrored(Reflect(MathAsin(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
       case Reflect(MathCosh(x), u, es) => reflectMirrored(Reflect(MathCosh(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
       case Reflect(MathTan(x), u, es) => reflectMirrored(Reflect(MathTan(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-      case Reflect(MathTanh(x), u, es) => reflectMirrored(Reflect(MathTanh(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)      
+      case Reflect(MathTanh(x), u, es) => reflectMirrored(Reflect(MathTanh(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
 
       case _ => super.mirror(e,f)
     }
@@ -184,7 +184,7 @@ trait ScalaGenMathOps extends BaseGenMathOps with ScalaGenEffect {
     case MathMax(x,y) => emitValDef(sym, src"java.lang.Math.max($x, $y)")
     case MathMin(x,y) => emitValDef(sym, src"java.lang.Math.min($x, $y)")
     case MathPi() => emitValDef(sym, "java.lang.Math.PI")
-    case MathE() => emitValDef(sym, "java.lang.Math.E")    
+    case MathE() => emitValDef(sym, "java.lang.Math.E")
     case _ => super.emitNode(sym, rhs)
   }
 }
@@ -251,7 +251,7 @@ trait CudaGenMathOps extends CLikeGenMathOps with CudaGenEffect {
     case MathPi() => emitValDef(sym, "CUDART_PI_F")
     case MathE() => emitValDef(sym, "2.7182818284f")
     case _ => super.emitNode(sym, rhs)
-  }        
+  }
 }
 
 trait OpenCLGenMathOps extends CLikeGenMathOps with OpenCLGenEffect {
@@ -270,7 +270,7 @@ trait OpenCLGenMathOps extends CLikeGenMathOps with OpenCLGenEffect {
 trait CGenMathOps extends CLikeGenMathOps with CGenEffect {
   val IR: MathOpsExp
   import IR._
-  
+
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
     case MathPi() => emitValDef(sym, "M_PI")
     case MathE() => emitValDef(sym, "M_E")
@@ -278,3 +278,4 @@ trait CGenMathOps extends CLikeGenMathOps with CGenEffect {
   }
 
 }
+*/

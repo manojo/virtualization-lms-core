@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -39,13 +39,13 @@ trait RangeOpsExp extends RangeOps with PrimitiveOps with EffectExp {
   case class RangeForeach(start: Exp[Int], end: Exp[Int], i: Sym[Int], body: Block[Unit]) extends Def[Unit]
 
   def range_until(start: Exp[Int], end: Exp[Int])(implicit pos: SourceContext) : Exp[Range] = Until(start, end)
-  def range_start(r: Exp[Range])(implicit pos: SourceContext) : Exp[Int] = r match { 
+  def range_start(r: Exp[Range])(implicit pos: SourceContext) : Exp[Int] = r match {
     case Def(Until(start, end)) => start
     case Def(Reflect(Until(start, end), u, es)) => start
     case _ => RangeStart(r)
   }
   def range_step(r: Exp[Range])(implicit pos: SourceContext) : Exp[Int] = RangeStep(r)
-  def range_end(r: Exp[Range])(implicit pos: SourceContext) : Exp[Int] = r match { 
+  def range_end(r: Exp[Range])(implicit pos: SourceContext) : Exp[Int] = r match {
     case Def(Until(start, end)) => end
     case Def(Reflect(Until(start, end), u, es)) => end
     case _ => RangeEnd(r)
@@ -55,9 +55,9 @@ trait RangeOpsExp extends RangeOps with PrimitiveOps with EffectExp {
     val a = reifyEffects(block(i))
     reflectEffect(RangeForeach(r.start, r.end, i, a), summarizeEffects(a).star)
   }
-  
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
-    case Reflect(RangeForeach(s,e,i,b), u, es) => reflectMirrored(Reflect(RangeForeach(f(s),f(e),f(i).asInstanceOf[Sym[Int]],f(b)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)    
+
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+    case Reflect(RangeForeach(s,e,i,b), u, es) => reflectMirrored(Reflect(RangeForeach(f(s),f(e),f(i).asInstanceOf[Sym[Int]],f(b)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(RangeStart(r), u, es) => reflectMirrored(Reflect(RangeStart(f(r)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(RangeStep(r), u, es) => reflectMirrored(Reflect(RangeStep(f(r)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(RangeEnd(r), u, es) => reflectMirrored(Reflect(RangeEnd(f(r)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
@@ -183,3 +183,4 @@ trait CGenRangeOps extends CGenEffect with BaseGenRangeOps {
     case _ => super.emitNode(sym, rhs)
   }
 }
+*/

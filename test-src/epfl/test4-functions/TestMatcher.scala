@@ -7,14 +7,14 @@ import test3._
 
 
 trait ListMatch extends Extractors {
-  
-  implicit def listTyp[A:Typ]: Typ[List[A]]
-  implicit def consTyp[T:Typ]: Typ[::[T]]
+
+  implicit def listTyp[A: Typ: Nul]: Typ[List[A]]
+  implicit def consTyp[T: Typ: Nul]: Typ[::[T]]
 
   object :!: {
-    def apply[A:Typ](x: Rep[A], xs: Rep[List[A]]) = construct(classOf[::[A]], (::.apply[A] _).tupled, tuple(x, xs))
+    def apply[A: Typ: Nul](x: Rep[A], xs: Rep[List[A]]) = construct(classOf[::[A]], (::.apply[A] _).tupled, tuple(x, xs))
 //    def unapply[A](x: Rep[::[A]]) = deconstruct2(classOf[::[A]], ::.unapply[A], x) // doesn't work: hd is private in :: !
-    def unapply[A:Typ](x: Rep[List[A]]): Option[(Rep[A], Rep[List[A]])] = 
+    def unapply[A: Typ: Nul](x: Rep[List[A]]): Option[(Rep[A], Rep[List[A]])] =
       deconstruct2(classOf[::[A]].asInstanceOf[Class[List[A]]], (x: List[A]) => Some(x.head, x.tail), x)
   }
 
@@ -22,13 +22,13 @@ trait ListMatch extends Extractors {
 
 
 trait MatcherProg { this: Matching with ListMatch =>
-  
+
   type Input = List[Char]
 
   implicit def charTyp: Typ[Char]
   implicit def boolTyp: Typ[Boolean]
   implicit def inputTyp: Typ[Input]
-  
+
   def find(p: Input, s: Rep[Input]) = loop(p,s,p,s)
 
   def loop(p0: Input, s0: Rep[Input], pr: Input, sr: Rep[Input]): Rep[Boolean] = p0 match {
@@ -46,7 +46,7 @@ trait MatcherProg { this: Matching with ListMatch =>
       } end
     case _ => unit(true)
   }
-    
+
   def next(p: Input, s: Rep[Input]): Rep[Boolean] = s switch {
     case s:!:(ss: Rep[Input]) => loop(p,ss,p,ss)
   } orElse {
@@ -62,11 +62,11 @@ trait MatcherProgExp0 extends common.BaseExp with MatcherProg { this: Matching w
   implicit def boolTyp: Typ[Boolean] = ManifestTyp(implicitly)
   implicit def inputTyp: Typ[Input] = ManifestTyp(implicitly)
 
-  implicit def listTyp[T:Typ]: Typ[List[T]] = {
+  implicit def listTyp[T: Typ: Nul]: Typ[List[T]] = {
     implicit val ManifestTyp(m) = typ[T]
     ManifestTyp(implicitly)
   }
-  implicit def consTyp[T:Typ]: Typ[::[T]] = {
+  implicit def consTyp[T: Typ: Nul]: Typ[::[T]] = {
     implicit val ManifestTyp(m) = typ[T]
     ManifestTyp(implicitly)
   }
@@ -75,9 +75,9 @@ trait MatcherProgExp0 extends common.BaseExp with MatcherProg { this: Matching w
 
 
 class TestMatcher extends FileDiffSuite {
-  
+
   val prefix = home + "test-out/epfl/test4-"
-  
+
   def testMatcher1 = {
     withOutFile(prefix+"matcher1") {
       object MatcherProgExp extends MatcherProgExp0 with Matching with Extractors with ListMatch

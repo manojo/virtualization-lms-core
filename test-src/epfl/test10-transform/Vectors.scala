@@ -16,12 +16,12 @@ import scala.reflect.SourceContext
 
 /*
 
-  highest level: immutable Vectors 
-  
+  highest level: immutable Vectors
+
   for loops, map and reduce
-  
+
   mutable arrays, while loops
-  
+
 */
 
 
@@ -29,17 +29,17 @@ import scala.reflect.SourceContext
 
 trait VectorOps extends Base {
   trait Vector[T]
-  implicit def vectorTyp[T:Typ]: Typ[Vector[T]]
+  implicit def vectorTyp[T: Typ: Nul]: Typ[Vector[T]]
   def vzeros(n: Rep[Int]): Rep[Vector[Double]]
-  def vliteral[T:Typ](a: List[Rep[T]]): Rep[Vector[T]]
-  def vapply[T:Typ](a: Rep[Vector[T]], x: Rep[Int]): Rep[T]
-  def vupdate[T:Typ](a: Rep[Vector[T]], x: Rep[Int], y: Rep[T]): Rep[Unit]
-  def vlength[T:Typ](a: Rep[Vector[T]]): Rep[Int]
+  def vliteral[T: Typ: Nul](a: List[Rep[T]]): Rep[Vector[T]]
+  def vapply[T: Typ: Nul](a: Rep[Vector[T]], x: Rep[Int]): Rep[T]
+  def vupdate[T: Typ: Nul](a: Rep[Vector[T]], x: Rep[Int], y: Rep[T]): Rep[Unit]
+  def vlength[T: Typ: Nul](a: Rep[Vector[T]]): Rep[Int]
   def vplus(a: Rep[Vector[Double]], b: Rep[Vector[Double]]): Rep[Vector[Double]]
 }
 
 trait VectorExp extends VectorOps with EffectExp {
-  implicit def vectorTyp[T:Typ]: Typ[Vector[T]] = { 
+  implicit def vectorTyp[T: Typ: Nul]: Typ[Vector[T]] = {
     implicit val ManifestTyp(m) = typ[T]
     ManifestTyp(implicitly)
   }
@@ -54,14 +54,14 @@ trait VectorExp extends VectorOps with EffectExp {
   case class VectorPlus(a: Rep[Vector[Double]], b: Rep[Vector[Double]]) extends Def[Vector[Double]]
 
   def vzeros(n: Rep[Int]): Rep[Vector[Double]] = VectorZeros(n)
-  def vliteral[T:Typ](a: List[Rep[T]]): Rep[Vector[T]] = VectorLiteral(a)
+  def vliteral[T: Typ: Nul](a: List[Rep[T]]): Rep[Vector[T]] = VectorLiteral(a)
   def vplus(a: Rep[Vector[Double]], b: Rep[Vector[Double]]): Rep[Vector[Double]] = VectorPlus(a,b)
-  def vapply[T:Typ](a: Rep[Vector[T]], x: Rep[Int]): Rep[T] = VectorApply(a,x)
-  def vupdate[T:Typ](a: Rep[Vector[T]], x: Rep[Int], y: Rep[T]): Rep[Unit] = VectorUpdate(a,x,y)
-  def vlength[T:Typ](a: Rep[Vector[T]]): Rep[Int] = VectorLength(a)
+  def vapply[T: Typ: Nul](a: Rep[Vector[T]], x: Rep[Int]): Rep[T] = VectorApply(a,x)
+  def vupdate[T: Typ: Nul](a: Rep[Vector[T]], x: Rep[Int], y: Rep[T]): Rep[Unit] = VectorUpdate(a,x,y)
+  def vlength[T: Typ: Nul](a: Rep[Vector[T]]): Rep[Int] = VectorLength(a)
 
   // FIXME: wrong manifests -- need to take from Def
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case VectorZeros(n) => vzeros(f(n))
     case VectorLiteral(a) => vliteral(f(a))(mtype(manifest[A]))
     case VectorApply(a,x) => vapply(f(a),f(x))(mtype(manifest[A]))
@@ -71,7 +71,7 @@ trait VectorExp extends VectorOps with EffectExp {
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]] // why??
 
-  override def mirrorDef[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = (e match {
+  override def mirrorDef[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = (e match {
     case VectorZeros(n) => VectorZeros(f(n))
     case VectorLiteral(a) => VectorLiteral(f(a))
     case VectorApply(a,x) => VectorApply(f(a),f(x))
@@ -80,7 +80,7 @@ trait VectorExp extends VectorOps with EffectExp {
     case VectorPlus(a, b) => VectorPlus(f(a),f(b))
     case _ => super.mirrorDef(e,f)
   }).asInstanceOf[Def[A]] // why??
-  
+
   override def aliasSyms(e: Any): List[Sym[Any]] = e match {
     case _ => super.aliasSyms(e)
   }
@@ -107,7 +107,7 @@ trait VectorExpOpt extends VectorExp {
     case (a, Def(VectorZeros(n))) => a
     case _ => super.vplus(a,b)
   }
-  
+
 }
 
 trait ScalaGenVector extends ScalaGenBase {

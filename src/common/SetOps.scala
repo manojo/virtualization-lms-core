@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -7,15 +7,15 @@ import scala.collection.mutable.Set
 import scala.reflect.SourceContext
 
 trait SetOps extends Base {
-  implicit def setTyp[T:Typ]: Typ[Set[T]]
+  implicit def setTyp[T: Typ: Nul]: Typ[Set[T]]
 
   object Set {
-    def apply[A:Typ](xs: Rep[A]*)(implicit pos: SourceContext) = set_new[A](xs)
+    def apply[A: Typ: Nul](xs: Rep[A]*)(implicit pos: SourceContext) = set_new[A](xs)
   }
 
-  implicit def repSetToSetOps[A:Typ](v: Rep[Set[A]]) = new setOpsCls(v)
+  implicit def repSetToSetOps[A: Typ: Nul](v: Rep[Set[A]]) = new setOpsCls(v)
 
-  class setOpsCls[A:Typ](s: Rep[Set[A]]) {
+  class setOpsCls[A: Typ: Nul](s: Rep[Set[A]]) {
     def contains(i: Rep[A])(implicit pos: SourceContext) = set_contains(s, i)
     def add(i: Rep[A])(implicit pos: SourceContext) = set_add(s, i)
     def remove(i: Rep[A])(implicit pos: SourceContext) = set_remove(s, i)
@@ -25,42 +25,42 @@ trait SetOps extends Base {
     def toArray(implicit pos: SourceContext) = set_toarray(s)
   }
 
-  def set_new[A:Typ](xs: Seq[Rep[A]])(implicit pos: SourceContext) : Rep[Set[A]]
-  def set_contains[A:Typ](s: Rep[Set[A]], i: Rep[A])(implicit pos: SourceContext) : Rep[Boolean]
-  def set_add[A:Typ](s: Rep[Set[A]], i: Rep[A])(implicit pos: SourceContext) : Rep[Unit]
-  def set_remove[A:Typ](s: Rep[Set[A]], i: Rep[A])(implicit pos: SourceContext) : Rep[Unit]
-  def set_size[A:Typ](s: Rep[Set[A]])(implicit pos: SourceContext) : Rep[Int]
-  def set_clear[A:Typ](s: Rep[Set[A]])(implicit pos: SourceContext) : Rep[Unit]
-  def set_toseq[A:Typ](s: Rep[Set[A]])(implicit pos: SourceContext): Rep[Seq[A]]
-  def set_toarray[A:Typ](s: Rep[Set[A]])(implicit pos: SourceContext): Rep[Array[A]]
+  def set_new[A: Typ: Nul](xs: Seq[Rep[A]])(implicit pos: SourceContext) : Rep[Set[A]]
+  def set_contains[A: Typ: Nul](s: Rep[Set[A]], i: Rep[A])(implicit pos: SourceContext) : Rep[Boolean]
+  def set_add[A: Typ: Nul](s: Rep[Set[A]], i: Rep[A])(implicit pos: SourceContext) : Rep[Unit]
+  def set_remove[A: Typ: Nul](s: Rep[Set[A]], i: Rep[A])(implicit pos: SourceContext) : Rep[Unit]
+  def set_size[A: Typ: Nul](s: Rep[Set[A]])(implicit pos: SourceContext) : Rep[Int]
+  def set_clear[A: Typ: Nul](s: Rep[Set[A]])(implicit pos: SourceContext) : Rep[Unit]
+  def set_toseq[A: Typ: Nul](s: Rep[Set[A]])(implicit pos: SourceContext): Rep[Seq[A]]
+  def set_toarray[A: Typ: Nul](s: Rep[Set[A]])(implicit pos: SourceContext): Rep[Array[A]]
 }
 
 trait SetOpsExp extends SetOps with ArrayOps with BooleanOps with EffectExp {
-  implicit def setTyp[T:Typ]: Typ[Set[T]] = {
+  implicit def setTyp[T: Typ: Nul]: Typ[Set[T]] = {
     implicit val ManifestTyp(m) = typ[T]
     manifestTyp
   }
 
-  case class SetNew[A:Typ](xs: Seq[Exp[A]], mA: Typ[A]) extends Def[Set[A]]
-  case class SetContains[A:Typ](s: Exp[Set[A]], i: Exp[A]) extends Def[Boolean]
-  case class SetAdd[A:Typ](s: Exp[Set[A]], i: Exp[A]) extends Def[Unit]
-  case class SetRemove[A:Typ](s: Exp[Set[A]], i: Exp[A]) extends Def[Unit]
-  case class SetSize[A:Typ](s: Exp[Set[A]]) extends Def[Int]
-  case class SetClear[A:Typ](s: Exp[Set[A]]) extends Def[Unit]
-  case class SetToSeq[A:Typ](s: Exp[Set[A]]) extends Def[Seq[A]]
-  case class SetToArray[A:Typ](s: Exp[Set[A]]) extends Def[Array[A]] {
+  case class SetNew[A: Typ: Nul](xs: Seq[Exp[A]], mA: Typ[A]) extends Def[Set[A]]
+  case class SetContains[A: Typ: Nul](s: Exp[Set[A]], i: Exp[A]) extends Def[Boolean]
+  case class SetAdd[A: Typ: Nul](s: Exp[Set[A]], i: Exp[A]) extends Def[Unit]
+  case class SetRemove[A: Typ: Nul](s: Exp[Set[A]], i: Exp[A]) extends Def[Unit]
+  case class SetSize[A: Typ: Nul](s: Exp[Set[A]]) extends Def[Int]
+  case class SetClear[A: Typ: Nul](s: Exp[Set[A]]) extends Def[Unit]
+  case class SetToSeq[A: Typ: Nul](s: Exp[Set[A]]) extends Def[Seq[A]]
+  case class SetToArray[A: Typ: Nul](s: Exp[Set[A]]) extends Def[Array[A]] {
     //val array = unit(manifest[A].newArray(0))
     val array = NewArray[A](s.size)
   }
 
-  def set_new[A:Typ](xs: Seq[Exp[A]])(implicit pos: SourceContext) = reflectMutable(SetNew(xs, manifest[A]))
-  def set_contains[A:Typ](s: Exp[Set[A]], i: Exp[A])(implicit pos: SourceContext) = SetContains(s, i)
-  def set_add[A:Typ](s: Exp[Set[A]], i: Exp[A])(implicit pos: SourceContext) = reflectWrite(s)(SetAdd(s, i))
-  def set_remove[A:Typ](s: Exp[Set[A]], i: Exp[A])(implicit pos: SourceContext) = reflectWrite(s)(SetRemove(s, i))
-  def set_size[A:Typ](s: Exp[Set[A]])(implicit pos: SourceContext) = SetSize(s)
-  def set_clear[A:Typ](s: Exp[Set[A]])(implicit pos: SourceContext) = reflectWrite(s)(SetClear(s))
-  def set_toseq[A:Typ](s: Exp[Set[A]])(implicit pos: SourceContext) = SetToSeq(s)
-  def set_toarray[A:Typ](s: Exp[Set[A]])(implicit pos: SourceContext) = SetToArray(s)
+  def set_new[A: Typ: Nul](xs: Seq[Exp[A]])(implicit pos: SourceContext) = reflectMutable(SetNew(xs, manifest[A]))
+  def set_contains[A: Typ: Nul](s: Exp[Set[A]], i: Exp[A])(implicit pos: SourceContext) = SetContains(s, i)
+  def set_add[A: Typ: Nul](s: Exp[Set[A]], i: Exp[A])(implicit pos: SourceContext) = reflectWrite(s)(SetAdd(s, i))
+  def set_remove[A: Typ: Nul](s: Exp[Set[A]], i: Exp[A])(implicit pos: SourceContext) = reflectWrite(s)(SetRemove(s, i))
+  def set_size[A: Typ: Nul](s: Exp[Set[A]])(implicit pos: SourceContext) = SetSize(s)
+  def set_clear[A: Typ: Nul](s: Exp[Set[A]])(implicit pos: SourceContext) = reflectWrite(s)(SetClear(s))
+  def set_toseq[A: Typ: Nul](s: Exp[Set[A]])(implicit pos: SourceContext) = SetToSeq(s)
+  def set_toarray[A: Typ: Nul](s: Exp[Set[A]])(implicit pos: SourceContext) = SetToArray(s)
 }
 
 trait BaseGenSetOps extends GenericNestedCodegen {
@@ -109,3 +109,4 @@ trait CLikeGenSetOps extends BaseGenSetOps with CLikeCodegen {
 trait CudaGenSetOps extends CudaGenEffect with CLikeGenSetOps
 trait OpenCLGenSetOps extends OpenCLGenEffect with CLikeGenSetOps
 trait CGenSetOps extends CGenEffect with CLikeGenSetOps
+*/

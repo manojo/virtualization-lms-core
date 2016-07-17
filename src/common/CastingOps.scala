@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -8,11 +8,11 @@ import scala.reflect.SourceContext
 trait CastingOps extends Variables with OverloadHack {
   this: ImplicitOps =>
 
-  //implicit def anyToCastingOps[A:Typ](lhs: A) = new CastingOpsCls(lhs)
-  implicit def repAnyToCastingOps[A:Typ](lhs: Rep[A]) = new CastingOpsCls(lhs)
-  implicit def varAnyToCastingOps[A:Typ](lhs: Var[A]) = new CastingOpsCls(readVar(lhs))
-    
-  class CastingOpsCls[A:Typ](lhs: Rep[A]){
+  //implicit def anyToCastingOps[A: Typ: Nul](lhs: A) = new CastingOpsCls(lhs)
+  implicit def repAnyToCastingOps[A: Typ: Nul](lhs: Rep[A]) = new CastingOpsCls(lhs)
+  implicit def varAnyToCastingOps[A: Typ: Nul](lhs: Var[A]) = new CastingOpsCls(readVar(lhs))
+
+  class CastingOpsCls[A: Typ: Nul](lhs: Rep[A]){
     def IsInstanceOf[B:Typ](implicit pos: SourceContext): Rep[Boolean] = rep_isinstanceof(lhs, typ[A], typ[B])
     def AsInstanceOf[B:Typ](implicit pos: SourceContext): Rep[B] = rep_asinstanceof(lhs, typ[A], typ[B])
   }
@@ -30,7 +30,7 @@ trait CastingOpsExp extends CastingOps with BaseExp with EffectExp with BooleanO
   def rep_isinstanceof[A,B](lhs: Exp[A], mA: Typ[A], mB: Typ[B])(implicit pos: SourceContext) = RepIsInstanceOf(lhs,mA,mB)
   def rep_asinstanceof[A,B:Typ](lhs: Exp[A], mA: Typ[A], mB: Typ[B])(implicit pos: SourceContext) : Exp[B] = toAtom(RepAsInstanceOf(lhs,mA,mB))(mB,pos)
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case RepAsInstanceOf(lhs, mA, mB) => rep_asinstanceof(f(lhs),mA,mB)(mtype(mB),pos)
     case Reflect(e@RepAsInstanceOf(lhs, mA, mB), u, es) => reflectMirrored(Reflect(RepAsInstanceOf(f(lhs),mA,mB)(mtype(mB)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case _ => super.mirror(e,f)
@@ -40,7 +40,7 @@ trait CastingOpsExp extends CastingOps with BaseExp with EffectExp with BooleanO
 trait ScalaGenCastingOps extends ScalaGenBase {
   val IR: CastingOpsExp
   import IR._
-  
+
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
     case RepIsInstanceOf(x,mA,mB) => emitValDef(sym, src"$x.isInstanceOf[$mB]")
     case RepAsInstanceOf(x,mA,mB) => emitValDef(sym, src"$x.asInstanceOf[$mB]")
@@ -48,7 +48,7 @@ trait ScalaGenCastingOps extends ScalaGenBase {
   }
 }
 
-trait CLikeGenCastingOps extends CLikeGenBase { 
+trait CLikeGenCastingOps extends CLikeGenBase {
   val IR: CastingOpsExp
   import IR._
 
@@ -61,6 +61,7 @@ trait CLikeGenCastingOps extends CLikeGenBase {
     }
 }
 
-trait CudaGenCastingOps extends CudaGenBase with CLikeGenCastingOps 
-trait OpenCLGenCastingOps extends OpenCLGenBase with CLikeGenCastingOps 
-trait CGenCastingOps extends CGenBase with CLikeGenCastingOps 
+trait CudaGenCastingOps extends CudaGenBase with CLikeGenCastingOps
+trait OpenCLGenCastingOps extends OpenCLGenBase with CLikeGenCastingOps
+trait CGenCastingOps extends CGenBase with CLikeGenCastingOps
+*/

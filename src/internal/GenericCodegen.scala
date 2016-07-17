@@ -10,16 +10,16 @@ trait GenericCodegen extends BlockTraversal {
   import IR._
 
   // TODO: should some of the methods be moved into more specific subclasses?
-  
+
   def deviceTarget: Targets.Value = throw new Exception("deviceTarget is not defined for this codegen.")
   def hostTarget: Targets.Value = Targets.getHostTarget(deviceTarget)
   def isAcceleratorTarget: Boolean = hostTarget != deviceTarget
-  
+
   def kernelFileExt = ""
   def emitFileHeader(): Unit = {}
   def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultType: String, resultIsVar: Boolean, external: Boolean): Unit = {}
   def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultType: String, resultIsVar: Boolean, external: Boolean): Unit = {}
-  
+
   // Initializer
   def initializeGenerator(buildDir:String, args: Array[String]): Unit = { }
   def finalizeGenerator(): Unit = {}
@@ -33,34 +33,34 @@ trait GenericCodegen extends BlockTraversal {
   def dataPath = {
     "data" + java.io.File.separator
   }
-  
+
   def symDataPath(sym: Sym[Any]) = {
     dataPath + sym.id
   }
- 
+
   def emitData(sym: Sym[Any], data: Seq[Any]) {
     val outDir = new File(dataPath)
     outDir.mkdirs()
     val outFile = new File(symDataPath(sym))
     val stream = new PrintWriter(outFile)
-    
+
     for(v <- data) {
       stream.println(v)
     }
-    
+
     stream.close()
   }
-  
+
   // exception handler
   def exceptionHandler(e: Exception, outFile:File, kstream:PrintWriter): Unit = {
       kstream.close()
       outFile.delete
   }
-  
+
   // optional type remapping (default is identity)
   def remap(s: String): String = s
   def remap[A](s: String, method: String, t: Typ[A]) : String = remap(s, method, t.toString)
-  def remap(s: String, method: String, t: String) : String = s + method + "[" + remap(t) + "]"    
+  def remap(s: String, method: String, t: String) : String = s + method + "[" + remap(t) + "]"
   def remap[A](m: Typ[A]): String = m match {
     case ManifestTyp(rm: RefinedManifest[A]) =>  "AnyRef{" + rm.fields.foldLeft(""){(acc, f) => {val (n,mnf) = f; acc + "val " + n + ": " + remap(ManifestTyp(mnf)) + ";"}} + "}"
     case _ if m.erasure == classOf[Variable[Any]] =>
@@ -72,11 +72,11 @@ trait GenericCodegen extends BlockTraversal {
         val ms = m.toString
         ms.take(ms.indexOf("[")+1) + targs.map(tp => remap(tp)).mkString(", ") + "]"
       }
-      else m.toString    
+      else m.toString
   }
   def remapImpl[A](m: Typ[A]): String = remap(m)
   //def remapVar[A](m: Typ[Variable[A]]) : String = remap(m.typeArguments.head)
- 
+
   def remapHost[A](m: Typ[A]): String = remap(m).replaceAll(deviceTarget.toString,hostTarget.toString)
 
   def hasMetaData: Boolean = false
@@ -98,9 +98,9 @@ trait GenericCodegen extends BlockTraversal {
     case TP(sym, rhs) => emitNode(sym,rhs)
     case _ => throw new GenerationFailedException("don't know how to generate code for statement: " + stm)
   }
-    
+
   def emitBlock(y: Block[Any]): Unit = traverseBlock(y)
-    
+
   def emitNode(sym: Sym[Any], rhs: Def[Any]): Unit = {
     throw new GenerationFailedException("don't know how to generate code for: " + rhs)
   }
@@ -109,20 +109,20 @@ trait GenericCodegen extends BlockTraversal {
   def emitVarDecl(sym: Sym[Any]): Unit = throw new GenerationFailedException("don't know how to emit variable declaration " + quote(sym))
   def emitAssignment(sym: Sym[Any], rhs: String): Unit = throw new GenerationFailedException("don't know how to emit variable assignment " + quote(sym))
 
-  def emitSource[T : Typ, R : Typ](f: Exp[T] => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+  def emitSource[T: Typ: Nul, R: Typ: Nul](f: Exp[T] => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     val s = fresh[T]
     val body = reifyBlock(f(s))
     emitSource(List(s), body, className, stream)
   }
 
-  def emitSource2[T1 : Typ, T2 : Typ, R : Typ](f: (Exp[T1], Exp[T2]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+  def emitSource2[T1: Typ: Nul, T2: Typ: Nul, R: Typ: Nul](f: (Exp[T1], Exp[T2]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     val s1 = fresh[T1]
     val s2 = fresh[T2]
     val body = reifyBlock(f(s1, s2))
     emitSource(List(s1, s2), body, className, stream)
   }
 
-  def emitSource3[T1 : Typ, T2 : Typ, T3 : Typ, R : Typ](f: (Exp[T1], Exp[T2], Exp[T3]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+  def emitSource3[T1: Typ: Nul, T2: Typ: Nul, T3: Typ: Nul, R: Typ: Nul](f: (Exp[T1], Exp[T2], Exp[T3]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     val s1 = fresh[T1]
     val s2 = fresh[T2]
     val s3 = fresh[T3]
@@ -130,7 +130,7 @@ trait GenericCodegen extends BlockTraversal {
     emitSource(List(s1, s2, s3), body, className, stream)
   }
 
-  def emitSource4[T1 : Typ, T2 : Typ, T3 : Typ, T4 : Typ, R : Typ](f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+  def emitSource4[T1: Typ: Nul, T2: Typ: Nul, T3: Typ: Nul, T4: Typ: Nul, R: Typ: Nul](f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     val s1 = fresh[T1]
     val s2 = fresh[T2]
     val s3 = fresh[T3]
@@ -139,7 +139,7 @@ trait GenericCodegen extends BlockTraversal {
     emitSource(List(s1, s2, s3, s4), body, className, stream)
   }
 
-  def emitSource5[T1 : Typ, T2 : Typ, T3 : Typ, T4 : Typ, T5 : Typ, R : Typ](f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
+  def emitSource5[T1: Typ: Nul, T2: Typ: Nul, T3: Typ: Nul, T4: Typ: Nul, T5: Typ: Nul, R: Typ: Nul](f: (Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5]) => Exp[R], className: String, stream: PrintWriter): List[(Sym[Any], Any)] = {
     val s1 = fresh[T1]
     val s2 = fresh[T2]
     val s3 = fresh[T3]
@@ -155,7 +155,7 @@ trait GenericCodegen extends BlockTraversal {
    * @param className Name of the generated identifier
    * @param stream Output stream
    */
-  def emitSource[A : Typ](args: List[Sym[_]], body: Block[A], className: String, stream: PrintWriter): List[(Sym[Any], Any)] // return free static data in block
+  def emitSource[A: Typ: Nul](args: List[Sym[_]], body: Block[A], className: String, stream: PrintWriter): List[(Sym[Any], Any)] // return free static data in block
 
   def quote(x: Exp[Any]) : String = x match {
     case Const(s: String) => "\""+s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")+"\"" // TODO: more escapes?
@@ -167,9 +167,9 @@ trait GenericCodegen extends BlockTraversal {
     case Sym(n) => "x"+n
     case _ => throw new RuntimeException("could not quote " + x)
   }
-  
+
   // ----------
-  
+
   override def reset {
     stream = null
     super.reset
@@ -240,7 +240,7 @@ trait GenericNestedCodegen extends NestedBlockTraversal with GenericCodegen {
   import IR._
 
   override def traverseStm(stm: Stm) = super[GenericCodegen].traverseStm(stm)
-    
+
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
 //    case Read(s) =>
 //      emitValDef(sym, quote(s))

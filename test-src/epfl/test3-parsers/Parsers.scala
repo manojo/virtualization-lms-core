@@ -3,12 +3,12 @@ package epfl
 package test3
 
 trait Parsers { this: Matching with Extractors =>
-  
+
   type Elem
   type Input = List[Elem]
   implicit val mE: Typ[Elem]
   //implicit val mI: Typ[List[Elem]]
-  
+
   abstract class Parser {
     def apply(in: Rep[Input]): Rep[ParseResult]
   }
@@ -23,8 +23,8 @@ trait Parsers { this: Matching with Extractors =>
   implicit def successTyp: Typ[Success]
   implicit def failureTyp: Typ[Failure]
 
-  implicit def listTyp[T:Typ]: Typ[List[T]]
-  implicit def consTyp[T:Typ]: Typ[::[T]]
+  implicit def listTyp[T: Typ: Nul]: Typ[List[T]]
+  implicit def consTyp[T: Typ: Nul]: Typ[::[T]]
 
   object SuccessR {
     def apply(x: Rep[Input]): Rep[Success] = construct(classOf[Success], Success.apply, x)
@@ -37,9 +37,9 @@ trait Parsers { this: Matching with Extractors =>
   } // TODO: not so nice...
 
   object :!: {
-    def apply[A:Typ](x: Rep[A], xs: Rep[List[A]]) = construct(classOf[::[A]], (::.apply[A] _).tupled, tuple(x, xs))
+    def apply[A: Typ: Nul](x: Rep[A], xs: Rep[List[A]]) = construct(classOf[::[A]], (::.apply[A] _).tupled, tuple(x, xs))
 //    def unapply[A](x: Rep[::[A]]) = deconstruct2(classOf[::[A]], ::.unapply[A], x) // doesn't work: hd is private in :: !
-    def unapply[A:Typ](x: Rep[List[A]]): Option[(Rep[A], Rep[List[A]])] = 
+    def unapply[A: Typ: Nul](x: Rep[List[A]]): Option[(Rep[A], Rep[List[A]])] =
       deconstruct2(classOf[::[A]].asInstanceOf[Class[List[A]]], (x: List[A]) => Some(x.head, x.tail), x)
   }
 
@@ -54,7 +54,7 @@ trait Parsers { this: Matching with Extractors =>
       } end
     }
   }
-  
+
   def seq(a: Parser, b: Parser) = {
     new Parser {
       def apply(in: Rep[Input]) = a(in) switch {
@@ -64,7 +64,7 @@ trait Parsers { this: Matching with Extractors =>
       } end
     }
   }
-  
+
   def alt(a: Parser, b: Parser) = {
     new Parser {
       def apply(in: Rep[Input]) = a(in) switch {
@@ -74,10 +74,10 @@ trait Parsers { this: Matching with Extractors =>
       } end
     }
   }
-  
+
 //  def acceptElem(elem: Elem) = acceptIf(_ == elem)
   def acceptElems(elems: List[Elem]) = {
     elems.map(acceptElem).reduceLeft(seq)
   }
-  
+
 }

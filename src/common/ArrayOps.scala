@@ -1,15 +1,15 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
 import internal._
 import scala.reflect.SourceContext
 
-trait LiftArrays { 
+trait LiftArrays {
   this: ArrayOps =>
-  
+
   object Array {
-    def apply[T:Typ](xs: Rep[T]*) = array_obj_fromseq(xs)
+    def apply[T: Typ: Nul](xs: Rep[T]*) = array_obj_fromseq(xs)
   }
 }
 
@@ -17,22 +17,24 @@ trait LiftArrays {
 trait ArrayOps extends Variables {
 
   implicit def intTyp: Typ[Int] // import
-  implicit def seqTyp[T:Typ]: Typ[Seq[T]] // import
-  implicit def arrayTyp[T:Typ]: Typ[Array[T]]
+  implicit def seqTyp[T: Typ]: Typ[Seq[T]] // import
+  implicit def arrayTyp[T: Typ]: Typ[Array[T]]
+
+  implicit def arrayNul[T: Typ: Nul]: Nul[Array[T]]
 
   // multiple definitions needed because implicits won't chain
   // not using infix here because apply doesn't work with infix methods
-  implicit def varToArrayOps[T:Typ](x: Var[Array[T]]) = new ArrayOpsCls(readVar(x))
-  implicit def repArrayToArrayOps[T:Typ](a: Rep[Array[T]]) = new ArrayOpsCls(a)
-  implicit def arrayToArrayOps[T:Typ](a: Array[T]) = new ArrayOpsCls(unit(a))
+  implicit def varToArrayOps[T: Typ: Nul](x: Var[Array[T]]) = new ArrayOpsCls(readVar(x))
+  implicit def repArrayToArrayOps[T: Typ: Nul](a: Rep[Array[T]]) = new ArrayOpsCls(a)
+  implicit def arrayToArrayOps[T: Typ: Nul](a: Array[T]) = new ArrayOpsCls(unit(a))
 
   // substitution for "new Array[T](...)"
   // TODO: look into overriding __new for arrays
   object NewArray {
-    def apply[T:Typ](n: Rep[Int]) = array_obj_new[T](n)
+    def apply[T: Typ: Nul](n: Rep[Int]) = array_obj_new[T](n)
   }
 
-  class ArrayOpsCls[T:Typ](a: Rep[Array[T]]){
+  class ArrayOpsCls[T: Typ: Nul](a: Rep[Array[T]]){
     def apply(n: Rep[Int])(implicit pos: SourceContext) = array_apply(a, n)
     def update(n: Rep[Int], y: Rep[T])(implicit pos: SourceContext) = array_update(a,n,y)
     def length(implicit pos: SourceContext) = array_length(a)
@@ -43,92 +45,96 @@ trait ArrayOps extends Variables {
     def slice(start:Rep[Int], end:Rep[Int]) = array_slice(a,start,end)
   }
 
-  def array_obj_new[T:Typ](n: Rep[Int]): Rep[Array[T]]
-  def array_obj_fromseq[T:Typ](xs: Seq[Rep[T]]): Rep[Array[T]]
-  def array_apply[T:Typ](x: Rep[Array[T]], n: Rep[Int])(implicit pos: SourceContext): Rep[T]
-  def array_update[T:Typ](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  def array_unsafe_update[T:Typ](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  def array_length[T:Typ](x: Rep[Array[T]])(implicit pos: SourceContext) : Rep[Int]
-  def array_foreach[T:Typ](x: Rep[Array[T]], block: Rep[T] => Rep[Unit])(implicit pos: SourceContext): Rep[Unit]
-  def array_copy[T:Typ](src: Rep[Array[T]], srcPos: Rep[Int], dest: Rep[Array[T]], destPos: Rep[Int], len: Rep[Int])(implicit pos: SourceContext): Rep[Unit]
-  def array_unsafe_copy[T:Typ](src: Rep[Array[T]], srcPos: Rep[Int], dest: Rep[Array[T]], destPos: Rep[Int], len: Rep[Int])(implicit pos: SourceContext): Rep[Unit]
-  def array_sort[T:Typ](x: Rep[Array[T]])(implicit pos: SourceContext): Rep[Array[T]]
-  def array_map[A:Typ,B:Typ](a: Rep[Array[A]], f: Rep[A] => Rep[B]): Rep[Array[B]]
-  def array_toseq[A:Typ](a: Rep[Array[A]]): Rep[Seq[A]]
-  def array_slice[A:Typ](a: Rep[Array[A]], start:Rep[Int], end:Rep[Int]): Rep[Array[A]]
+  def array_obj_new[T: Typ: Nul](n: Rep[Int]): Rep[Array[T]]
+  def array_obj_fromseq[T: Typ: Nul](xs: Seq[Rep[T]]): Rep[Array[T]]
+  def array_apply[T: Typ: Nul](x: Rep[Array[T]], n: Rep[Int])(implicit pos: SourceContext): Rep[T]
+  def array_update[T: Typ: Nul](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def array_unsafe_update[T: Typ: Nul](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def array_length[T: Typ: Nul](x: Rep[Array[T]])(implicit pos: SourceContext) : Rep[Int]
+  def array_foreach[T: Typ: Nul](x: Rep[Array[T]], block: Rep[T] => Rep[Unit])(implicit pos: SourceContext): Rep[Unit]
+  def array_copy[T: Typ: Nul](src: Rep[Array[T]], srcPos: Rep[Int], dest: Rep[Array[T]], destPos: Rep[Int], len: Rep[Int])(implicit pos: SourceContext): Rep[Unit]
+  def array_unsafe_copy[T: Typ: Nul](src: Rep[Array[T]], srcPos: Rep[Int], dest: Rep[Array[T]], destPos: Rep[Int], len: Rep[Int])(implicit pos: SourceContext): Rep[Unit]
+  def array_sort[T: Typ: Nul](x: Rep[Array[T]])(implicit pos: SourceContext): Rep[Array[T]]
+  def array_map[A: Typ: Nul, B: Typ: Nul](a: Rep[Array[A]], f: Rep[A] => Rep[B]): Rep[Array[B]]
+  def array_toseq[A: Typ: Nul](a: Rep[Array[A]]): Rep[Seq[A]]
+  def array_slice[A: Typ: Nul](a: Rep[Array[A]], start:Rep[Int], end:Rep[Int]): Rep[Array[A]]
 }
 
 trait ArrayOpsExp extends ArrayOps with EffectExp with VariablesExp {
 
-  implicit def arrayTyp[T:Typ]: Typ[Array[T]] = {
+  implicit def arrayTyp[T: Typ]: Typ[Array[T]] = {
     implicit val ManifestTyp(m) = typ[T]
     manifestTyp
   }
 
-  case class ArrayNew[T:Typ](n: Exp[Int]) extends Def[Array[T]] {
+  implicit def arrayNul[T: Typ: Nul] = new Nul[Array[T]] {
+    def nullValue = unit(Array[T]())
+  }
+
+  case class ArrayNew[T: Typ: Nul](n: Exp[Int]) extends Def[Array[T]] {
     val m = manifest[T]
   }
-  case class ArrayFromSeq[T:Typ](xs: Seq[Exp[T]]) extends Def[Array[T]] {
+  case class ArrayFromSeq[T: Typ: Nul](xs: Seq[Exp[T]]) extends Def[Array[T]] {
     val m = manifest[T]
   }
-  case class ArrayApply[T:Typ](a: Exp[Array[T]], n: Exp[Int]) extends Def[T] {
+  case class ArrayApply[T: Typ: Nul](a: Exp[Array[T]], n: Exp[Int]) extends Def[T] {
     val m = manifest[T]
   }
-  case class ArrayUpdate[T:Typ](a: Exp[Array[T]], n: Exp[Int], y: Exp[T]) extends Def[Unit] {
+  case class ArrayUpdate[T: Typ: Nul](a: Exp[Array[T]], n: Exp[Int], y: Exp[T]) extends Def[Unit] {
     val m = manifest[T]
   }
-  case class ArrayLength[T:Typ](a: Exp[Array[T]]) extends Def[Int] {
+  case class ArrayLength[T: Typ: Nul](a: Exp[Array[T]]) extends Def[Int] {
     val m = manifest[T]
   }
   case class ArrayForeach[T](a: Exp[Array[T]], x: Sym[T], block: Block[Unit]) extends Def[Unit]
-  case class ArrayCopy[T:Typ](src: Exp[Array[T]], srcPos: Exp[Int], dest: Exp[Array[T]], destPos: Exp[Int], len: Exp[Int]) extends Def[Unit] {
+  case class ArrayCopy[T: Typ: Nul](src: Exp[Array[T]], srcPos: Exp[Int], dest: Exp[Array[T]], destPos: Exp[Int], len: Exp[Int]) extends Def[Unit] {
     val m = manifest[T]
   }
-  case class ArraySort[T:Typ](x: Exp[Array[T]]) extends Def[Array[T]] {
+  case class ArraySort[T: Typ: Nul](x: Exp[Array[T]]) extends Def[Array[T]] {
     val m = manifest[T]
   }
-  case class ArrayMap[A:Typ,B:Typ](a: Exp[Array[A]], x: Sym[A], block: Block[B]) extends Def[Array[B]] {
+  case class ArrayMap[A: Typ: Nul, B: Typ: Nul](a: Exp[Array[A]], x: Sym[A], block: Block[B]) extends Def[Array[B]] {
     val array = NewArray[B](a.length)
   }
-  case class ArrayToSeq[A:Typ](x: Exp[Array[A]]) extends Def[Seq[A]]
-  case class ArraySlice[A:Typ](a: Exp[Array[A]], s:Exp[Int], e:Exp[Int]) extends Def[Array[A]]
+  case class ArrayToSeq[A: Typ: Nul](x: Exp[Array[A]]) extends Def[Seq[A]]
+  case class ArraySlice[A: Typ: Nul](a: Exp[Array[A]], s:Exp[Int], e:Exp[Int]) extends Def[Array[A]]
 
-  def array_obj_new[T:Typ](n: Exp[Int]) = reflectMutable(ArrayNew(n))
-  def array_obj_fromseq[T:Typ](xs: Seq[Exp[T]]) = /*reflectMutable(*/ ArrayFromSeq(xs) /*)*/
-  def array_apply[T:Typ](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = ArrayApply(x, n)
-  def array_update[T:Typ](x: Exp[Array[T]], n: Exp[Int], y: Exp[T])(implicit pos: SourceContext) = reflectWrite(x)(ArrayUpdate(x,n,y))
-  def array_unsafe_update[T:Typ](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext) = ArrayUpdate(x,n,y)
-  def array_length[T:Typ](a: Exp[Array[T]])(implicit pos: SourceContext) : Rep[Int] = toAtom(ArrayLength(a))
-  def array_foreach[T:Typ](a: Exp[Array[T]], block: Exp[T] => Exp[Unit])(implicit pos: SourceContext): Exp[Unit] = {
+  def array_obj_new[T: Typ: Nul](n: Exp[Int]) = reflectMutable(ArrayNew(n))
+  def array_obj_fromseq[T: Typ: Nul](xs: Seq[Exp[T]]) = /*reflectMutable(*/ ArrayFromSeq(xs) /*)*/
+  def array_apply[T: Typ: Nul](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = ArrayApply(x, n)
+  def array_update[T: Typ: Nul](x: Exp[Array[T]], n: Exp[Int], y: Exp[T])(implicit pos: SourceContext) = reflectWrite(x)(ArrayUpdate(x,n,y))
+  def array_unsafe_update[T: Typ: Nul](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext) = ArrayUpdate(x,n,y)
+  def array_length[T: Typ: Nul](a: Exp[Array[T]])(implicit pos: SourceContext) : Rep[Int] = toAtom(ArrayLength(a))
+  def array_foreach[T: Typ: Nul](a: Exp[Array[T]], block: Exp[T] => Exp[Unit])(implicit pos: SourceContext): Exp[Unit] = {
     val x = fresh[T]
     val b = reifyEffects(block(x))
     reflectEffect(ArrayForeach(a, x, b), summarizeEffects(b).star)
   }
-  def array_copy[T:Typ](src: Exp[Array[T]], srcPos: Exp[Int], dest: Exp[Array[T]], destPos: Exp[Int], len: Exp[Int])(implicit pos: SourceContext) = reflectWrite(dest)(ArrayCopy(src,srcPos,dest,destPos,len))
-  def array_unsafe_copy[T:Typ](src: Exp[Array[T]], srcPos: Exp[Int], dest: Exp[Array[T]], destPos: Exp[Int], len: Exp[Int])(implicit pos: SourceContext) = ArrayCopy(src,srcPos,dest,destPos,len)
-  def array_sort[T:Typ](x: Exp[Array[T]])(implicit pos: SourceContext) = ArraySort(x)
-  def array_map[A:Typ,B:Typ](a: Exp[Array[A]], f: Exp[A] => Exp[B]) = {
+  def array_copy[T: Typ: Nul](src: Exp[Array[T]], srcPos: Exp[Int], dest: Exp[Array[T]], destPos: Exp[Int], len: Exp[Int])(implicit pos: SourceContext) = reflectWrite(dest)(ArrayCopy(src,srcPos,dest,destPos,len))
+  def array_unsafe_copy[T: Typ: Nul](src: Exp[Array[T]], srcPos: Exp[Int], dest: Exp[Array[T]], destPos: Exp[Int], len: Exp[Int])(implicit pos: SourceContext) = ArrayCopy(src,srcPos,dest,destPos,len)
+  def array_sort[T: Typ: Nul](x: Exp[Array[T]])(implicit pos: SourceContext) = ArraySort(x)
+  def array_map[A: Typ: Nul, B: Typ: Nul](a: Exp[Array[A]], f: Exp[A] => Exp[B]) = {
     val x = fresh[A]
     val b = reifyEffects(f(x))
     reflectEffect(ArrayMap(a, x, b), summarizeEffects(b))
   }
-  def array_toseq[A:Typ](a: Exp[Array[A]]) = ArrayToSeq(a)
-  def array_slice[A:Typ](a: Rep[Array[A]], start:Rep[Int], end:Rep[Int]) = ArraySlice(a,start,end)
+  def array_toseq[A: Typ: Nul](a: Exp[Array[A]]) = ArrayToSeq(a)
+  def array_slice[A: Typ: Nul](a: Rep[Array[A]], start:Rep[Int], end:Rep[Int]) = ArraySlice(a,start,end)
 
   //////////////
   // mirroring
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case ArrayApply(a,x) => array_apply(f(a),f(x))(mtype(manifest[A]),pos)
     case ArrayLength(x) => array_length(f(x))(mtype(manifest[A]),pos)
     case e@ArraySort(x) => array_sort(f(x))(mtype(manifest[A]),pos)
     case e@ArrayCopy(a,ap,d,dp,l) => array_copy(f(a),f(ap),f(d),f(dp),f(l))(mtype(manifest[A]),pos)
-    case Reflect(e@ArrayNew(n), u, es) => reflectMirrored(Reflect(ArrayNew(f(n))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)    
-    case Reflect(e@ArrayLength(x), u, es) => reflectMirrored(Reflect(ArrayLength(f(x))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)    
+    case Reflect(e@ArrayNew(n), u, es) => reflectMirrored(Reflect(ArrayNew(f(n))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
+    case Reflect(e@ArrayLength(x), u, es) => reflectMirrored(Reflect(ArrayLength(f(x))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(e@ArrayApply(l,r), u, es) => reflectMirrored(Reflect(ArrayApply(f(l),f(r))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(e@ArraySort(x), u, es) => reflectMirrored(Reflect(ArraySort(f(x))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(e@ArrayUpdate(l,i,r), u, es) => reflectMirrored(Reflect(ArrayUpdate(f(l),f(i),f(r))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)   
-    case Reflect(e@ArrayCopy(a,ap,d,dp,l), u, es) => reflectMirrored(Reflect(ArrayCopy(f(a),f(ap),f(d),f(dp),f(l))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)     
+    case Reflect(e@ArrayUpdate(l,i,r), u, es) => reflectMirrored(Reflect(ArrayUpdate(f(l),f(i),f(r))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
+    case Reflect(e@ArrayCopy(a,ap,d,dp,l), u, es) => reflectMirrored(Reflect(ArrayCopy(f(a),f(ap),f(d),f(dp),f(l))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]] // why??
 
@@ -157,7 +163,7 @@ trait ArrayOpsExpOpt extends ArrayOpsExp {
   /**
    * @author  Alen Stojanov (astojanov@inf.ethz.ch)
    */
-  override def array_length[T:Typ](a: Exp[Array[T]])(implicit pos: SourceContext) : Rep[Int] = a match {
+  override def array_length[T: Typ: Nul](a: Exp[Array[T]])(implicit pos: SourceContext) : Rep[Int] = a match {
     case Def(ArrayNew(n: Exp[Int])) => n
     case Def(ArrayFromSeq(xs)) => Const(xs.size)
     case Def(ArraySort(x)) => array_length(x)
@@ -169,7 +175,7 @@ trait ArrayOpsExpOpt extends ArrayOpsExp {
     case _ => super.array_length(a)
   }
 
-  override def array_apply[T:Typ](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = {
+  override def array_apply[T: Typ: Nul](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = {
     if (context ne null) {
       // find the last modification of array x
       // if it is an assigment at index n, just return the last value assigned
@@ -187,7 +193,7 @@ trait ArrayOpsExpOpt extends ArrayOpsExp {
     }
   }
 
-  override def array_update[T:Typ](x: Exp[Array[T]], n: Exp[Int], y: Exp[T])(implicit pos: SourceContext) = {
+  override def array_update[T: Typ: Nul](x: Exp[Array[T]], n: Exp[Int], y: Exp[T])(implicit pos: SourceContext) = {
     if (context ne null) {
       // find the last modification of array x
       // if it is an assigment at index n with the same value, just do nothing
@@ -248,7 +254,7 @@ trait ScalaGenArrayOps extends BaseGenArrayOps with ScalaGenBase {
     case ArrayLength(x) => emitValDef(sym, src"$x.length")
     case ArrayForeach(a,x,block) =>
       gen"""val $sym = $a.foreach{
-           |$x => 
+           |$x =>
            |${nestedBlock(block)}
            |$block
            |}"""
@@ -316,4 +322,4 @@ trait CGenArrayOps extends CGenBase with BaseGenArrayOps {
       }
     }
 }
-
+*/

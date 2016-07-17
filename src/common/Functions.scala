@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -80,8 +80,8 @@ trait FunctionsExp extends Functions with EffectExp {
   // creating an abstraction, and unbox when applying it. See
   // TupledFunctionsExp for an example.
 
-  def unboxedFresh[A:Typ] : Exp[A] = fresh[A]
-  def unbox[A:Typ](x : Exp[A])(implicit pos: SourceContext) : Exp[A] = x
+  def unboxedFresh[A: Typ: Nul] : Exp[A] = fresh[A]
+  def unbox[A: Typ: Nul](x : Exp[A])(implicit pos: SourceContext) : Exp[A] = x
 
   def doLambdaDef[A:Typ,B:Typ](f: Exp[A] => Exp[B]) : Def[A => B] = {
     val x = unboxedFresh[A]
@@ -106,7 +106,7 @@ trait FunctionsExp extends Functions with EffectExp {
     }
   }
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case e@Lambda(g,x:Exp[Any],y:Block[b]) => toAtom(Lambda(f(g),f(x),f(y))(e.mA,e.mB))(mtype(manifest[A]),pos)
     case e@Apply(g,arg) => doApply(f(g), f(arg))(e.mA,mtype(e.mB),pos)
     case Reflect(e@Apply(g,arg), u, es) => reflectMirrored(Reflect(Apply(f(g),f(arg))(e.mA,mtype(e.mB)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
@@ -149,14 +149,14 @@ trait TupledFunctionsExp extends TupledFunctions with FunctionsExp with TupleOps
   private def tupledTyp[T](m: Typ[T]): Boolean = m.erasure.getName startsWith "scala.Tuple"
   private def tupledTypOf[T](m: Typ[T], arity: Int): Boolean = m.erasure.getName == "scala.Tuple" + arity
 
-  override def unboxedFresh[A:Typ] : Exp[A] = {
+  override def unboxedFresh[A: Typ: Nul] : Exp[A] = {
     val mA = implicitly[Typ[A]]
     if (mA == implicitly[Typ[Unit]] || tupledTyp(mA))
       UnboxedTuple[A](mA.typeArguments.map(fresh(_)))
     else fresh[A]
   }
 
-  override def unbox[A:Typ](x : Exp[A])(implicit pos: SourceContext) : Exp[A] = {
+  override def unbox[A: Typ: Nul](x : Exp[A])(implicit pos: SourceContext) : Exp[A] = {
     val mA = implicitly[Typ[A]]
     x match {
       case _ : UnboxedTuple[A] => x
@@ -201,7 +201,7 @@ trait TupledFunctionsExp extends TupledFunctions with FunctionsExp with TupleOps
     case _ => super.boundSyms(e)
   }
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case e@Lambda(g,UnboxedTuple(xs),y:Block[b]) => toAtom(Lambda(f(g),UnboxedTuple(f(xs))(e.mA),f(y))(e.mA,e.mB))(mtype(manifest[A]),implicitly[SourceContext])
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]]
@@ -284,14 +284,14 @@ trait ScalaGenTupledFunctions extends ScalaGenFunctions with GenericGenUnboxedTu
 
     case _ => super.emitNode(sym,rhs)
   }
-  
+
   def unwrapTupleStr[A](m: Typ[A]): Array[String] = {
     val s = m.toString
     if (s.startsWith("scala.Tuple")) s.slice(s.indexOf("[")+1,s.length-1).filter(c => c != ' ').split(",")
     else Array(remap(m))
-  } 
-  
-  override def remap[A](m: Typ[A]): String = m.toString match {    
+  }
+
+  override def remap[A](m: Typ[A]): String = m.toString match {
     case f if f.startsWith("scala.Function") =>
       val targs = m.typeArguments.dropRight(1)
       val res = remap(m.typeArguments.last)
@@ -370,13 +370,13 @@ trait CGenFunctions extends CGenEffect with BaseGenFunctions {
       emitValDef(sym, quote(fun) + "(" + quote(arg) + ")")
     case _ => super.emitNode(sym, rhs)
   }
-  
+
 }
 
 trait CGenTupledFunctions extends CGenFunctions with GenericGenUnboxedTupleAccess {
   val IR: TupledFunctionsExp
   import IR._
-  
+
   /*override def quote(x: Exp[Any]) : String = x match {
     case UnboxedTuple(t) => t.map(quote).mkString("((", ",", "))")
     case _ => super.quote(x)
@@ -415,3 +415,4 @@ trait CGenTupledFunctions extends CGenFunctions with GenericGenUnboxedTupleAcces
     case _ => super.remap(m)
   }*/
 }
+*/

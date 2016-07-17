@@ -1,9 +1,9 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import scala.lms.common._
 
-trait CoreOpsPkgExp 
+trait CoreOpsPkgExp
     extends PrimitiveOpsExp
     with BooleanOpsExp
     with StringOpsExp
@@ -57,7 +57,7 @@ trait CCodeGenPkg extends CGenImplicitOps with CGenNumericOps with CGenFractiona
     with CGenStringOps with CGenRangeOps with CGenIOOps with CGenArrayOps with CGenBooleanOps
     with CGenPrimitiveOps with CGenMiscOps with CGenFunctions with CGenEqual with CGenIfThenElse
     with CGenVariables with CGenWhile with CGenTupleOps with CGenListOps
-    with CGenSeqOps with CGenDSLOps with CGenMathOps with CGenCastingOps with CGenSetOps 
+    with CGenSeqOps with CGenDSLOps with CGenMathOps with CGenCastingOps with CGenSetOps
     with CGenObjectOps with CGenArrayBufferOps
     { val IR: ScalaOpsPkgExp  }
 
@@ -67,7 +67,7 @@ trait CudaCodeGenPkg extends CudaGenImplicitOps with CudaGenNumericOps with Cuda
     with CudaGenStringOps with CudaGenRangeOps with CudaGenIOOps with CudaGenArrayOps with CudaGenBooleanOps
     with CudaGenPrimitiveOps with CudaGenMiscOps with CudaGenFunctions with CudaGenEqual with CudaGenIfThenElse
     with CudaGenVariables with CudaGenWhile with CudaGenTupleOps with CudaGenListOps
-    with CudaGenSeqOps with CudaGenDSLOps with CudaGenMathOps with CudaGenCastingOps with CudaGenSetOps 
+    with CudaGenSeqOps with CudaGenDSLOps with CudaGenMathOps with CudaGenCastingOps with CudaGenSetOps
     with CudaGenObjectOps with CudaGenArrayBufferOps
     { val IR: ScalaOpsPkgExp  }
 
@@ -77,6 +77,6 @@ trait OpenCLCodeGenPkg extends OpenCLGenImplicitOps with OpenCLGenNumericOps wit
     with OpenCLGenStringOps with OpenCLGenRangeOps with OpenCLGenIOOps with OpenCLGenArrayOps with OpenCLGenBooleanOps
     with OpenCLGenPrimitiveOps with OpenCLGenMiscOps with OpenCLGenFunctions with OpenCLGenEqual with OpenCLGenIfThenElse
     with OpenCLGenVariables with OpenCLGenWhile with OpenCLGenTupleOps with OpenCLGenListOps
-    with OpenCLGenSeqOps with OpenCLGenDSLOps with OpenCLGenMathOps with OpenCLGenCastingOps with OpenCLGenSetOps 
+    with OpenCLGenSeqOps with OpenCLGenDSLOps with OpenCLGenMathOps with OpenCLGenCastingOps with OpenCLGenSetOps
     with OpenCLGenObjectOps with OpenCLGenArrayBufferOps
-    { val IR: ScalaOpsPkgExp  }
+    { val IR: ScalaOpsPkgExp  }*/

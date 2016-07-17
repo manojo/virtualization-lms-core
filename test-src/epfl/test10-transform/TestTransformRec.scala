@@ -22,7 +22,7 @@ class TestTransformRec extends FileDiffSuite {
 
   trait Impl extends DSL with PrimitiveOpsExpOpt with EqualExp with IfThenElseFatExp with LoopsFatExp with FunctionsExternalDef1 { self =>
     override val verbosity = 1
-    
+
     case class DefineFun2[A,B](res: Block[B])(val arg1: Sym[A], val arg2: Sym[Int]) extends Def[A=>B]
 
     override def boundSyms(e: Any): List[Sym[Any]] = e match {
@@ -35,7 +35,7 @@ class TestTransformRec extends FileDiffSuite {
       case _ => super.symsFreq(e)
     }
 
-    override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+    override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
       case g@Apply(x,y) => toAtom(Apply(f(x),f(y))(mtype(g.mA),mtype(g.mB)))
       case g@DefineFun(y) => toAtom(DefineFun(f(y))(g.arg))(mtype(typ[A]),pos)
       case _ => super.mirror(e,f)

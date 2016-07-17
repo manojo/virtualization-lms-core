@@ -8,14 +8,14 @@ import scala.reflect.SourceContext
  * This trait automatically lifts any concrete instance to a representation.
  */
 trait LiftAll extends Base {
-  protected implicit def __unit[T:Typ](x: T) = unit(x)
+  protected implicit def __unit[T: Typ: Nul](x: T) = unit(x)
 }
 
 /**
  * The Base trait defines the type constructor Rep, which is the higher-kinded type that allows for other DSL types to be
  * polymorphically embedded.
  *
- * @since 0.1 
+ * @since 0.1
  */
 trait Base extends EmbeddedControls {
   type API <: Base
@@ -23,12 +23,27 @@ trait Base extends EmbeddedControls {
   type Rep[+T]
   type Typ[T]
 
-  protected def unit[T:Typ](x: T): Rep[T]
+  /**
+   * A typeclass that knows how to generate default values for types
+   * It propagates all the way here because basic constructs need
+   * access to it
+   */
+  type Nul[T]
+  def zeroVal[T: Typ: Nul]: Rep[T]
+  def nul[T: Typ: Nul]: Nul[T]
+
+  protected def unit[T: Typ: Nul](x: T): Rep[T]
 
   implicit def unitTyp: Typ[Unit]
   implicit def nullTyp: Typ[Null]
 
-  def typ[T:Typ]: Typ[T]
+  /**
+   * Nullable unit and Null values
+   */
+  implicit def unitNul: Nul[Unit]
+  implicit def nullNul: Nul[Null]
+
+  def typ[T: Typ]: Typ[T]
 
   // always lift Unit and Null (for now)
   implicit def unitToRepUnit(x: Unit) = unit(x)
@@ -43,13 +58,29 @@ trait Base extends EmbeddedControls {
 trait BaseExp extends Base with Expressions with Blocks with Transforming {
   type Rep[+T] = Exp[T]
   //type Typ[T] = TypeExp[T] defined in Expressions
-  protected def manifest[T:Typ] = implicitly[Typ[T]] // TODO: change
-  protected def manifestTyp[T:Manifest]: Typ[T] = ManifestTyp(implicitly)
+  protected def manifest[T: Typ] = implicitly[Typ[T]] // TODO: change
+  protected def manifestTyp[T: Manifest]: Typ[T] = ManifestTyp(implicitly)
 
   implicit def unitTyp: Typ[Unit] = manifestTyp
   implicit def nullTyp: Typ[Null] = manifestTyp
 
-  protected def unit[T:Typ](x: T) = Const(x)
+  protected def unit[T: Typ: Nul](x: T) = Const(x)
+
+  /**
+   * Nullable unit and Null values
+   */
+  implicit def unitNul: Nul[Unit] = UnitNul
+  implicit def nullNul: Nul[Null] = NullNul
+
+  implicit object UnitNul extends Nul[Unit] {
+    def nullValue = unit(())
+    def nlArguments = Nil
+  }
+
+  implicit object NullNul extends Nul[Null] {
+    def nullValue = unit(null)
+    def nlArguments = Nil
+  }
 }
 
 trait BlockExp extends BaseExp with Blocks
@@ -62,18 +93,18 @@ trait EffectExp extends BaseExp with Effects {
       mayWrite = t.onlySyms(u.mayWrite), mstWrite = t.onlySyms(u.mstWrite))
   }
 
-  override def mirrorDef[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = e match {
+  override def mirrorDef[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = e match {
     case Reflect(x, u, es) => Reflect(mirrorDef(x,f), mapOver(f,u), f(es))
     case Reify(x, u, es) => Reify(f(x), mapOver(f,u), f(es))
     case _ => super.mirrorDef(e,f)
   }
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = e match {
     case Reflect(x, u, es) => reflectMirrored(mirrorDef(e,f).asInstanceOf[Reflect[A]])
     case Reify(x, u, es) => Reify(f(x), mapOver(f,u), f(es))
     case _ => super.mirror(e,f)
   }
-    
+
 }
 
 trait BaseFatExp extends BaseExp with FatExpressions with FatTransforming

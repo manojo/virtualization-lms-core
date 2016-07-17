@@ -9,9 +9,18 @@ import scala.reflect.SourceContext
 trait LiftVariables extends Base {
   this: Variables =>
 
-  def __newVar[T:Typ](init: T)(implicit pos: SourceContext) = var_new(unit(init))
-  def __newVar[T](init: Rep[T])(implicit o: Overloaded1, mT: Typ[T], pos: SourceContext) = var_new(init)
-  def __newVar[T](init: Var[T])(implicit o: Overloaded2, mT: Typ[T], pos: SourceContext) = var_new(init)
+  def __newVar[T: Typ: Nul](init: T)(implicit pos: SourceContext) = var_new(unit(init))
+  def __newVar[T](init: Rep[T])
+                 (implicit o: Overloaded1,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_new(init)
+
+  def __newVar[T](init: Var[T])
+                 (implicit o: Overloaded2,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_new(init)
 }
 
 // ReadVar is factored out so that it does not have higher priority than VariableImplicits when mixed in
@@ -19,13 +28,13 @@ trait LiftVariables extends Base {
 trait ReadVarImplicit {
   this: Variables =>
 
-  implicit def readVar[T:Typ](v: Var[T])(implicit pos: SourceContext) : Rep[T]
+  implicit def readVar[T: Typ: Nul](v: Var[T])(implicit pos: SourceContext) : Rep[T]
 }
 
 trait ReadVarImplicitExp extends EffectExp {
   this: VariablesExp =>
 
-  implicit def readVar[T:Typ](v: Var[T])(implicit pos: SourceContext) : Exp[T] = ReadVar(v)
+  implicit def readVar[T: Typ: Nul](v: Var[T])(implicit pos: SourceContext) : Exp[T] = ReadVar(v)
 }
 
 trait LowPriorityVariableImplicits extends ImplicitOps {
@@ -34,6 +43,10 @@ trait LowPriorityVariableImplicits extends ImplicitOps {
   implicit def intTyp: Typ[Int]
   implicit def floatTyp: Typ[Float]
   implicit def doubleTyp: Typ[Double]
+
+  implicit def intNul: Nul[Int]
+  implicit def floatNul: Nul[Float]
+  implicit def doubleNul: Nul[Double]
 
   implicit def varIntToRepDouble(x: Var[Int])(implicit pos: SourceContext): Rep[Double] = implicit_convert[Int,Double](readVar(x))
   implicit def varIntToRepFloat(x: Var[Int])(implicit pos: SourceContext): Rep[Float] = implicit_convert[Int,Float](readVar(x))
@@ -52,34 +65,93 @@ trait Variables extends Base with OverloadHack with VariableImplicits with ReadV
   type Var[+T] //FIXME: should be invariant
 
   //implicit def chainReadVar[T,U](x: Var[T])(implicit f: Rep[T] => U): U = f(readVar(x))
-  def var_new[T:Typ](init: Rep[T])(implicit pos: SourceContext): Var[T]
-  def var_assign[T:Typ](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  def var_plusequals[T:Typ](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  def var_minusequals[T:Typ](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  def var_timesequals[T:Typ](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  def var_divideequals[T:Typ](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
-  
-  def __assign[T:Typ](lhs: Var[T], rhs: T)(implicit pos: SourceContext) = var_assign(lhs, unit(rhs))
-  def __assign[T](lhs: Var[T], rhs: Rep[T])(implicit o: Overloaded1, mT: Typ[T], pos: SourceContext) = var_assign(lhs, rhs)
-  def __assign[T](lhs: Var[T], rhs: Var[T])(implicit o: Overloaded2, mT: Typ[T], pos: SourceContext) = var_assign(lhs, readVar(rhs))
+  def var_new[T: Typ: Nul](init: Rep[T])(implicit pos: SourceContext): Var[T]
+  def var_assign[T: Typ: Nul](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def var_plusequals[T: Typ: Nul](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def var_minusequals[T: Typ: Nul](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def var_timesequals[T: Typ: Nul](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def var_divideequals[T: Typ: Nul](lhs: Var[T], rhs: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+
+  def __assign[T: Typ: Nul](lhs: Var[T], rhs: T)(implicit pos: SourceContext) = var_assign(lhs, unit(rhs))
+  def __assign[T](lhs: Var[T], rhs: Rep[T])(implicit o: Overloaded1, mT: Typ[T], nT: Nul[T], pos: SourceContext) = var_assign(lhs, rhs)
+  def __assign[T](lhs: Var[T], rhs: Var[T])(implicit o: Overloaded2, mT: Typ[T], nT: Nul[T], pos: SourceContext) = var_assign(lhs, readVar(rhs))
 /*
   def __assign[T,U](lhs: Var[T], rhs: Rep[U])(implicit o: Overloaded2, mT: Typ[T], mU: Typ[U], conv: Rep[U]=>Rep[T]) = var_assign(lhs, conv(rhs))
 */
 
   // TODO: why doesn't this implicit kick in automatically? <--- do they belong here? maybe better move to NumericOps
   // we really need to refactor this. +=/-= shouldn't be here or in Arith, but in some other type class, which includes Numeric variables
-  def infix_+=[T](lhs: Var[T], rhs: T)(implicit o: Overloaded1, mT: Typ[T], pos: SourceContext) = var_plusequals(lhs, unit(rhs))
-  def infix_+=[T](lhs: Var[T], rhs: Rep[T])(implicit o: Overloaded2, mT: Typ[T], pos: SourceContext) = var_plusequals(lhs,rhs)
-  def infix_+=[T](lhs: Var[T], rhs: Var[T])(implicit o: Overloaded3, mT: Typ[T], pos: SourceContext) = var_plusequals(lhs,readVar(rhs))
-  def infix_-=[T](lhs: Var[T], rhs: T)(implicit o: Overloaded1, mT: Typ[T], pos: SourceContext) = var_minusequals(lhs, unit(rhs))
-  def infix_-=[T](lhs: Var[T], rhs: Rep[T])(implicit o: Overloaded2, mT: Typ[T], pos: SourceContext) = var_minusequals(lhs,rhs)
-  def infix_-=[T](lhs: Var[T], rhs: Var[T])(implicit o: Overloaded3, mT: Typ[T], pos: SourceContext) = var_minusequals(lhs,readVar(rhs))
-  def infix_*=[T](lhs: Var[T], rhs: T)(implicit o: Overloaded1, mT: Typ[T], pos: SourceContext) = var_timesequals(lhs, unit(rhs))
-  def infix_*=[T](lhs: Var[T], rhs: Rep[T])(implicit o: Overloaded2, mT: Typ[T], pos: SourceContext) = var_timesequals(lhs,rhs)
-  def infix_*=[T](lhs: Var[T], rhs: Var[T])(implicit o: Overloaded3, mT: Typ[T], pos: SourceContext) = var_timesequals(lhs,readVar(rhs))
-  def infix_/=[T](lhs: Var[T], rhs: T)(implicit o: Overloaded1, mT: Typ[T], pos: SourceContext) = var_divideequals(lhs, unit(rhs))
-  def infix_/=[T](lhs: Var[T], rhs: Rep[T])(implicit o: Overloaded2, mT: Typ[T], pos: SourceContext) = var_divideequals(lhs,rhs)
-  def infix_/=[T](lhs: Var[T], rhs: Var[T])(implicit o: Overloaded3, mT: Typ[T], pos: SourceContext) = var_divideequals(lhs,readVar(rhs))
+  def infix_+=[T](lhs: Var[T], rhs: T)
+                 (implicit o: Overloaded1,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_plusequals(lhs, unit(rhs))
+
+  def infix_+=[T](lhs: Var[T], rhs: Rep[T])
+                 (implicit o: Overloaded2,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_plusequals(lhs,rhs)
+
+  def infix_+=[T](lhs: Var[T], rhs: Var[T])
+                 (implicit o: Overloaded3,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_plusequals(lhs,readVar(rhs))
+
+  def infix_-=[T](lhs: Var[T], rhs: T)
+                 (implicit o: Overloaded1,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_minusequals(lhs, unit(rhs))
+
+  def infix_-=[T](lhs: Var[T], rhs: Rep[T])
+                 (implicit o: Overloaded2,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_minusequals(lhs,rhs)
+
+  def infix_-=[T](lhs: Var[T], rhs: Var[T])
+                 (implicit o: Overloaded3,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_minusequals(lhs,readVar(rhs))
+
+  def infix_*=[T](lhs: Var[T], rhs: T)
+                 (implicit o: Overloaded1,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_timesequals(lhs, unit(rhs))
+
+  def infix_*=[T](lhs: Var[T], rhs: Rep[T])
+                 (implicit o: Overloaded2,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_timesequals(lhs,rhs)
+
+  def infix_*=[T](lhs: Var[T], rhs: Var[T])
+                 (implicit o: Overloaded3,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_timesequals(lhs,readVar(rhs))
+
+  def infix_/=[T](lhs: Var[T], rhs: T)
+                 (implicit o: Overloaded1,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_divideequals(lhs, unit(rhs))
+
+  def infix_/=[T](lhs: Var[T], rhs: Rep[T])
+                 (implicit o: Overloaded2,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_divideequals(lhs,rhs)
+
+  def infix_/=[T](lhs: Var[T], rhs: Var[T])
+                 (implicit o: Overloaded3,
+                  mT: Typ[T],
+                  nT: Nul[T],
+                  pos: SourceContext) = var_divideequals(lhs,readVar(rhs))
 }
 
 trait VariablesExp extends Variables with PrimitiveOps with ImplicitOpsExp with VariableImplicits with ReadVarImplicitExp {
@@ -92,57 +164,68 @@ trait VariablesExp extends Variables with PrimitiveOps with ImplicitOpsExp with 
   //case class Variable[+T](val e: Exp[Variable[T]]) // FIXME: in Expressions because used by codegen...
   type Var[+T] = Variable[T] //FIXME: should be invariant
 
-  implicit def varTyp[T:Typ]: Typ[Var[T]] = {
+  implicit def varTyp[T: Typ]: Typ[Var[T]] = {
     implicit val ManifestTyp(m) = typ[T]
     manifestTyp
   }
 
-  case class ReadVar[T:Typ](v: Var[T]) extends Def[T]
-  case class NewVar[T:Typ](init: Exp[T]) extends Def[Variable[T]] {
-    def m = manifest[T]
-  }
-  case class Assign[T:Typ](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
-    def m = manifest[T]
-  }
-  case class VarPlusEquals[T:Typ](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
-    def m = manifest[T]
-  }
-  case class VarMinusEquals[T:Typ](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
-    def m = manifest[T]
-  }
-  case class VarTimesEquals[T:Typ](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
-    def m = manifest[T]
-  }
-  case class VarDivideEquals[T:Typ](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
-    def m = manifest[T]
+  implicit def varNul[T: Typ: Nul] = new Nul[Var[T]] {
+    def nullValue = unit(null) //dummy value, we'll never use is\
+    def nlArguments = nul[T] :: Nil
   }
 
-  def var_new[T:Typ](init: Exp[T])(implicit pos: SourceContext): Var[T] = {
+  case class ReadVar[T: Typ: Nul](v: Var[T]) extends Def[T]
+  case class NewVar[T: Typ: Nul](init: Exp[T]) extends Def[Variable[T]] {
+    def m = manifest[T]
+    def n = nul[T]
+  }
+  case class Assign[T: Typ: Nul](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
+    def m = manifest[T]
+    def n = nul[T]
+  }
+  case class VarPlusEquals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
+    def m = manifest[T]
+    def n = nul[T]
+  }
+  case class VarMinusEquals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
+    def m = manifest[T]
+    def n = nul[T]
+  }
+  case class VarTimesEquals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
+    def m = manifest[T]
+    def n = nul[T]
+  }
+  case class VarDivideEquals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T]) extends Def[Unit] {
+    def m = manifest[T]
+    def n = nul[T]
+  }
+
+  def var_new[T: Typ: Nul](init: Exp[T])(implicit pos: SourceContext): Var[T] = {
     //reflectEffect(NewVar(init)).asInstanceOf[Var[T]]
     Variable(reflectMutable(NewVar(init)))
   }
 
-  def var_assign[T:Typ](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
+  def var_assign[T: Typ: Nul](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
     reflectWrite(lhs.e)(Assign(lhs, rhs))
     Const()
   }
 
-  def var_plusequals[T:Typ](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
+  def var_plusequals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
     reflectWrite(lhs.e)(VarPlusEquals(lhs, rhs))
     Const()
   }
 
-  def var_minusequals[T:Typ](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
+  def var_minusequals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
     reflectWrite(lhs.e)(VarMinusEquals(lhs, rhs))
     Const()
   }
-  
-  def var_timesequals[T:Typ](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
+
+  def var_timesequals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
     reflectWrite(lhs.e)(VarTimesEquals(lhs, rhs))
     Const()
   }
-  
-  def var_divideequals[T:Typ](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
+
+  def var_divideequals[T: Typ: Nul](lhs: Var[T], rhs: Exp[T])(implicit pos: SourceContext): Exp[Unit] = {
     reflectWrite(lhs.e)(VarDivideEquals(lhs, rhs))
     Const()
   }
@@ -193,15 +276,15 @@ trait VariablesExp extends Variables with PrimitiveOps with ImplicitOpsExp with 
 
 
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case ReadVar(Variable(a)) => readVar(Variable(f(a)))
-    case Reflect(e@NewVar(a), u, es) => reflectMirrored(Reflect(NewVar(f(a))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(ReadVar(Variable(a)), u, es) => reflectMirrored(Reflect(ReadVar(Variable(f(a))), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(e@Assign(Variable(a),b), u, es) => reflectMirrored(Reflect(Assign(Variable(f(a)), f(b))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(e@VarPlusEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarPlusEquals(Variable(f(a)), f(b))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(e@VarMinusEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarMinusEquals(Variable(f(a)), f(b))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(e@VarTimesEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarTimesEquals(Variable(f(a)), f(b))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
-    case Reflect(e@VarDivideEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarDivideEquals(Variable(f(a)), f(b))(e.m), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
+    case Reflect(e @ NewVar(a), u, es) => reflectMirrored(Reflect(NewVar(f(a))(e.m, e.n), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
+    case Reflect(ReadVar(Variable(a)), u, es) => reflectMirrored(Reflect(ReadVar(Variable(f(a))), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
+    case Reflect(e @ Assign(Variable(a),b), u, es) => reflectMirrored(Reflect(Assign(Variable(f(a)), f(b))(e.m, e.n), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
+    case Reflect(e @ VarPlusEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarPlusEquals(Variable(f(a)), f(b))(e.m, e.n), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
+    case Reflect(e @ VarMinusEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarMinusEquals(Variable(f(a)), f(b))(e.m, e.n), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
+    case Reflect(e @ VarTimesEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarTimesEquals(Variable(f(a)), f(b))(e.m, e.n), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
+    case Reflect(e @ VarDivideEquals(Variable(a),b), u, es) => reflectMirrored(Reflect(VarDivideEquals(Variable(f(a)), f(b))(e.m, e.n), mapOver(f,u), f(es)))(mtype(manifest[A]), ntype(nul[A]), pos)
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]]
 
@@ -210,14 +293,14 @@ trait VariablesExp extends Variables with PrimitiveOps with ImplicitOpsExp with 
 
 trait VariablesExpOpt extends VariablesExp {
 
-  override implicit def readVar[T:Typ](v: Var[T])(implicit pos: SourceContext) : Exp[T] = {
+  override implicit def readVar[T: Typ: Nul](v: Var[T])(implicit pos: SourceContext) : Exp[T] = {
     if (context ne null) {
       // find the last modification of variable v
-      // if it is an assigment, just return the last value assigned 
+      // if it is an assigment, just return the last value assigned
       val vs = v.e.asInstanceOf[Sym[Variable[T]]]
       //TODO: could use calculateDependencies(Read(v))
-      
-      val rhs = context.reverse.collectFirst { 
+
+      val rhs = context.reverse.collectFirst {
         case w @ Def(Reflect(NewVar(rhs: Exp[T]), _, _)) if w == vs => Some(rhs)
         case Def(Reflect(Assign(`v`, rhs: Exp[T]), _, _)) => Some(rhs)
         case Def(Reflect(_, u, _)) if mayWrite(u, List(vs)) => None // not a simple assignment
@@ -227,18 +310,18 @@ trait VariablesExpOpt extends VariablesExp {
       super.readVar(v)
     }
   }
-  
+
   // eliminate (some) redundant stores
   // TODO: strong updates. overwriting a var makes previous stores unnecessary
 
-  override implicit def var_assign[T:Typ](v: Var[T], e: Exp[T])(implicit pos: SourceContext) : Exp[Unit] = {
+  override implicit def var_assign[T: Typ: Nul](v: Var[T], e: Exp[T])(implicit pos: SourceContext) : Exp[Unit] = {
     if (context ne null) {
       // find the last modification of variable v
       // if it is an assigment with the same value, we don't need to do anything
       val vs = v.e.asInstanceOf[Sym[Variable[T]]]
       //TODO: could use calculateDependencies(Read(v))
-      
-      context.reverse.foreach { 
+
+      context.reverse.foreach {
         case w @ Def(Reflect(NewVar(rhs: Exp[T]), _, _)) if w == vs => if (rhs == e) return ()
         case Def(Reflect(Assign(`v`, rhs: Exp[T]), _, _)) => if (rhs == e) return ()
         case Def(Reflect(_, u, _)) if mayWrite(u, List(vs)) =>  // not a simple assignment
@@ -278,7 +361,7 @@ trait ScalaGenVariables extends ScalaGenEffect {
     case VarDivideEquals(Variable(a), b) => emitValDef(sym, quote(a) + " /= " + quote(b))
     case _ => super.emitNode(sym, rhs)
   }
-*/  
+*/
 }
 
 trait CLikeGenVariables extends CLikeGenBase {

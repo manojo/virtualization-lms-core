@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -9,35 +9,35 @@ import scala.reflect.SourceContext
 trait ObjectOps extends Variables with StringOps with OverloadHack {
   def infix_toString(lhs: Rep[Any])(implicit pos: SourceContext) = object_tostring(lhs)
   def infix_ToString(lhs: Rep[Any])(implicit pos: SourceContext) = object_tostring(lhs)
-  def infix_unsafeImmutable[A:Typ](lhs: Rep[A])(implicit pos: SourceContext) = object_unsafe_immutable(lhs)
-  def infix_unsafeMutable[A:Typ](lhs: Rep[A])(implicit pos: SourceContext) = object_unsafe_mutable(lhs)
+  def infix_unsafeImmutable[A: Typ: Nul](lhs: Rep[A])(implicit pos: SourceContext) = object_unsafe_immutable(lhs)
+  def infix_unsafeMutable[A: Typ: Nul](lhs: Rep[A])(implicit pos: SourceContext) = object_unsafe_mutable(lhs)
 
   def object_tostring(lhs: Rep[Any])(implicit pos: SourceContext): Rep[String]
-  def object_unsafe_immutable[A:Typ](lhs: Rep[A])(implicit pos: SourceContext): Rep[A]
-  def object_unsafe_mutable[A:Typ](lhs: Rep[A])(implicit pos: SourceContext): Rep[A]
+  def object_unsafe_immutable[A: Typ: Nul](lhs: Rep[A])(implicit pos: SourceContext): Rep[A]
+  def object_unsafe_mutable[A: Typ: Nul](lhs: Rep[A])(implicit pos: SourceContext): Rep[A]
 }
 
 trait ObjectOpsExp extends ObjectOps with StringOpsExp with VariablesExp {
   case class ObjectToString(o: Exp[Any]) extends Def[String]
-  case class ObjectUnsafeImmutable[A:Typ](o: Exp[A]) extends Def[A] {
+  case class ObjectUnsafeImmutable[A: Typ: Nul](o: Exp[A]) extends Def[A] {
     val m = manifest[A]
   }
- case class ObjectUnsafeMutable[A:Typ](o: Exp[A]) extends Def[A] {
+ case class ObjectUnsafeMutable[A: Typ: Nul](o: Exp[A]) extends Def[A] {
    val m = manifest[A]
  }
 
   def object_tostring(lhs: Exp[Any])(implicit pos: SourceContext) = ObjectToString(lhs)
-  def object_unsafe_immutable[A:Typ](lhs: Exp[A])(implicit pos: SourceContext) = lhs match {
+  def object_unsafe_immutable[A: Typ: Nul](lhs: Exp[A])(implicit pos: SourceContext) = lhs match {
     // INVESTIGATE: there was an issue where Const(0).unsafeImmutable == Const(0.0). How is this possible? CSE with primitive widening?
     case c@Const(x) => c
     case _ => ObjectUnsafeImmutable(lhs)
   }
-  def object_unsafe_mutable[A:Typ](lhs: Exp[A])(implicit pos: SourceContext) = reflectMutable(ObjectUnsafeMutable(lhs))
+  def object_unsafe_mutable[A: Typ: Nul](lhs: Exp[A])(implicit pos: SourceContext) = reflectMutable(ObjectUnsafeMutable(lhs))
 
   //////////////
   // mirroring
 
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case e@ObjectUnsafeImmutable(a) => object_unsafe_immutable(f(a))(mtype(e.m),pos)
     case e@ObjectToString(a) => object_tostring(f(a))
     case Reflect(e@ObjectUnsafeImmutable(a), u, es) => reflectMirrored(Reflect(ObjectUnsafeImmutable(f(a))(mtype(e.m)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
@@ -79,7 +79,7 @@ trait ObjectOpsExpOpt extends ObjectOpsExp {
 trait ScalaGenObjectOps extends ScalaGenBase {
   val IR: ObjectOpsExp
   import IR._
-  
+
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
     case ObjectToString(lhs) => emitValDef(sym, src"($lhs).toString()")
     case ObjectUnsafeImmutable(x) => emitValDef(sym, src"$x// unsafe immutable")
@@ -93,10 +93,10 @@ trait GPUGenObjectOps extends GPUGenBase {
   import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
-    case ObjectUnsafeImmutable(x) => 
+    case ObjectUnsafeImmutable(x) =>
       emitValDef(sym, quote(x) + "; // unsafe immutable")
       emitPtrDef(sym, x)
-    case ObjectUnsafeMutable(x) => 
+    case ObjectUnsafeMutable(x) =>
       emitValDef(sym, quote(x) + "; // unsafe mutable")
       emitPtrDef(sym, x)
     case _ => super.emitNode(sym, rhs)
@@ -117,4 +117,5 @@ trait CLikeGenObjectOps extends CLikeGenBase {
 
 trait CudaGenObjectOps extends CudaGenBase with CLikeGenObjectOps
 trait OpenCLGenObjectOps extends OpenCLGenBase with CLikeGenObjectOps
-trait CGenObjectOps extends CGenBase with CLikeGenObjectOps 
+trait CGenObjectOps extends CGenBase with CLikeGenObjectOps
+*/

@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package common
 
 import java.io.PrintWriter
@@ -43,8 +43,8 @@ trait MiscOpsExp extends MiscOps with EffectExp with PrimitiveOpsExp with String
     printsrc(raw"in ${quotePos(x)}")
     reflectEffect(Return(x))
   }
-  
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case Reflect(Error(x), u, es) => reflectMirrored(Reflect(Error(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(Print(x), u, es) => reflectMirrored(Reflect(Print(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case Reflect(PrintLn(x), u, es) => reflectMirrored(Reflect(PrintLn(f(x)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
@@ -81,7 +81,7 @@ trait CGenMiscOps extends CGenEffect {
       case "bool" | "int8_t" | "int16_t" | "int32_t" => "%d"
       case "int64_t" => "%ld"
       case "float" | "double" => "%f"
-      case "string" => "%s" 
+      case "string" => "%s"
       case _ => throw new GenerationFailedException("CGenMiscOps: cannot print type " + remap(s.tp))
     }
   }
@@ -122,3 +122,4 @@ trait OpenCLGenMiscOps extends OpenCLGenEffect {
     case _ => super.emitNode(sym, rhs)
   }
 }
+*/

@@ -9,8 +9,8 @@ import java.lang.{StackTraceElement,Thread}
 
 /**
  * The Expressions trait houses common AST nodes. It also manages a list of encountered Definitions which
- * allows for common sub-expression elimination (CSE).  
- * 
+ * allows for common sub-expression elimination (CSE).
+ *
  * @since 0.1
  */
 trait Expressions extends Utils {
@@ -27,9 +27,9 @@ trait Expressions extends Utils {
     def typeArguments: List[Typ[_]]   = mf.typeArguments.map(ManifestTyp(_))
     def arrayTyp: Typ[Array[T]] = ManifestTyp(mf.arrayManifest)
     def runtimeClass: java.lang.Class[_] = mf.runtimeClass
-    def <:<(that: Typ[_]): Boolean = that match { 
-      case ManifestTyp(mf1) => mf.<:<(mf1) 
-      case _ => false 
+    def <:<(that: Typ[_]): Boolean = that match {
+      case ManifestTyp(mf1) => mf.<:<(mf1)
+      case _ => false
     }
     def erasure: java.lang.Class[_] = mf.erasure
     //override def canEqual(that: Any): Boolean = mf.canEqual(that) // TEMP
@@ -38,17 +38,38 @@ trait Expressions extends Utils {
     override def toString = mf.toString
   }
 
-  def typ[T:Typ]: Typ[T] = implicitly[Typ[T]]
+  def typ[T: Typ]: Typ[T] = implicitly[Typ[T]]
 
+  /**
+   * A typeclass that knows how to generate default values for types
+   * It propagates all the way here because basic constructs need
+   * access to it
+   */
+  abstract class Nul[T: Typ] {
+    def nullValue: Exp[T]
 
-  abstract class Exp[+T:Typ] { // constants/symbols (atomic)
-    def tp: Typ[T @uncheckedVariance] = implicitly[Typ[T]] //invariant position! but hey...
-    def pos: List[SourceContext] = Nil
+    /**
+     * to get access to the underlying guys, in case they are to be treated
+     * specially. Useful if one wants to define nested structures where
+     * zeroVal is not simply `null`
+     */
+    def nlArguments: List[Nul[_]]
   }
 
-  case class Const[+T:Typ](x: T) extends Exp[T]
+  def nul[T: Typ: Nul]: Nul[T] = implicitly[Nul[T]]
+  def zeroVal[T: Typ: Nul]: Exp[T] = nul[T].nullValue
 
-  case class Sym[+T:Typ](val id: Int) extends Exp[T] {
+  abstract class Exp[+T: Typ: Nul] { // constants/symbols (atomic)
+    def tp: Typ[T @uncheckedVariance] = implicitly[Typ[T]] //invariant position! but hey...
+    def pos: List[SourceContext] = Nil
+
+    /** given an expression, need evidence of its nullability */
+    def nl: Nul[T @uncheckedVariance] = implicitly[Nul[T]]
+  }
+
+  case class Const[+T: Typ: Nul](x: T) extends Exp[T]
+
+  case class Sym[+T: Typ: Nul](val id: Int) extends Exp[T] {
     var sourceContexts: List[SourceContext] = Nil
     override def pos = sourceContexts
     def withPos(pos: List[SourceContext]) = { sourceContexts :::= pos; this }
@@ -57,13 +78,13 @@ trait Expressions extends Utils {
   case class Variable[+T](val e: Exp[Variable[T]]) // TODO: decide whether it should stay here ... FIXME: should be invariant
 
   var nVars = 0
-  def fresh[T:Typ]: Sym[T] = Sym[T] { nVars += 1;  if (nVars%1000 == 0) printlog("nVars="+nVars);  nVars -1 }
+  def fresh[T: Typ: Nul]: Sym[T] = Sym[T] { nVars += 1;  if (nVars%1000 == 0) printlog("nVars="+nVars);  nVars -1 }
 
-  def fresh[T:Typ](pos: List[SourceContext]): Sym[T] = fresh[T].withPos(pos)
+  def fresh[T: Typ: Nul](pos: List[SourceContext]): Sym[T] = fresh[T].withPos(pos)
 
   def quotePos(e: Exp[Any]): String = e.pos match {
     case Nil => "<unknown>"
-    case cs => 
+    case cs =>
       def all(cs: SourceContext): List[SourceContext] = cs.parent match {
         case None => List(cs)
         case Some(p) => cs::all(p)
@@ -77,11 +98,11 @@ trait Expressions extends Utils {
   }
 
   abstract class Stm // statement (links syms and definitions)
-  
+
   def infix_lhs(stm: Stm): List[Sym[Any]] = stm match {
     case TP(sym, rhs) => sym::Nil
   }
-  
+
   def infix_rhs(stm: Stm): Any = stm match { // clients use syms(e.rhs), boundSyms(e.rhs) etc.
     case TP(sym, rhs) => rhs
   }
@@ -95,11 +116,11 @@ trait Expressions extends Utils {
     case TP(sym: Sym[A], `rhs`) => Some(sym)
     case _ => None
   }
-  
+
   case class TP[+T](sym: Sym[T], rhs: Def[T]) extends Stm
 
   // graph construction state
-  
+
   var globalDefs: List[Stm] = Nil
   var localDefs: List[Stm] = Nil
   var globalDefsCache: Map[Sym[Any],Stm] = Map.empty
@@ -125,7 +146,7 @@ trait Expressions extends Utils {
     assert(existing.isEmpty, "already defined: " + existing + " for " + ds)
     localDefs = localDefs ::: ds
     globalDefs = globalDefs ::: ds
-    for (stm <- ds; s <- stm.lhs) {      
+    for (stm <- ds; s <- stm.lhs) {
       globalDefsCache += (s->stm)
     }
   }
@@ -137,12 +158,12 @@ trait Expressions extends Utils {
   def findDefinition[T](d: Def[T]): Option[Stm] =
     globalDefs.find(x => x.defines(d).nonEmpty)
 
-  def findOrCreateDefinition[T:Typ](d: Def[T], pos: List[SourceContext]): Stm =
+  def findOrCreateDefinition[T: Typ: Nul](d: Def[T], pos: List[SourceContext]): Stm =
     findDefinition[T](d) map { x => x.defines(d).foreach(_.withPos(pos)); x } getOrElse {
       createDefinition(fresh[T](pos), d)
     }
 
-  def findOrCreateDefinitionExp[T:Typ](d: Def[T], pos: List[SourceContext]): Exp[T] =
+  def findOrCreateDefinitionExp[T: Typ: Nul](d: Def[T], pos: List[SourceContext]): Exp[T] =
     findOrCreateDefinition(d, pos).defines(d).get
 
   def createDefinition[T](s: Sym[T], d: Def[T]): Stm = {
@@ -150,9 +171,9 @@ trait Expressions extends Utils {
     reflectSubGraph(List(f))
     f
   }
-  
 
-  protected implicit def toAtom[T:Typ](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
+
+  protected implicit def toAtom[T: Typ: Nul](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
     findOrCreateDefinitionExp(d, List(pos)) // TBD: return Const(()) if type is Unit??
   }
 
@@ -173,7 +194,7 @@ trait Expressions extends Utils {
     case s: Sym[Any] => List(s)
     case ss: Iterable[Any] => ss.toList.flatMap(syms(_))
     // All case classes extend Product!
-    case p: Product => 
+    case p: Product =>
       // performance hotspot: this is the same as
       // p.productIterator.toList.flatMap(syms(_))
       // but faster
@@ -208,7 +229,7 @@ trait Expressions extends Utils {
     case _ => Nil
   }
 
-  // soft dependencies: they are not required but if they occur, 
+  // soft dependencies: they are not required but if they occur,
   // they must be scheduled before
   def softSyms(e: Any): List[Sym[Any]] = e match {
     // empty by default

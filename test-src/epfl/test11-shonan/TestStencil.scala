@@ -15,11 +15,11 @@ import scala.reflect.SourceContext
 
 
 class TestStencil extends FileDiffSuite {
-  
-  trait DSL extends LiftNumeric with NumericOps with PrimitiveOps with ArrayOps with RangeOps 
+
+  trait DSL extends LiftNumeric with NumericOps with PrimitiveOps with ArrayOps with RangeOps
     with BooleanOps with OrderingOps
     with LiftVariables with IfThenElse with Print {
-    def staticData[T:Typ](x: T): Rep[T]
+    def staticData[T: Typ: Nul](x: T): Rep[T]
     def infix_toDouble(x: Rep[Int]): Rep[Double]
     def test(x: Rep[Array[Double]]): Rep[Array[Double]]
   }
@@ -28,11 +28,11 @@ class TestStencil extends FileDiffSuite {
       with EqualExpOpt with VariablesExpOpt with RangeOpsExp with StaticDataExp
       with StringOpsExp with SeqOpsExp
       with IfThenElseExpOpt with PrintExp with PrimitiveOpsExp
-      with CompileScala { self => 
+      with CompileScala { self =>
     //override val verbosity = 1
     def infix_toDouble(x: Rep[Int]): Rep[Double] = int_double_value(x)
-    
-    val codegen = new ScalaGenNumericOps with ScalaGenStaticData with ScalaGenOrderingOps 
+
+    val codegen = new ScalaGenNumericOps with ScalaGenStaticData with ScalaGenOrderingOps
       with ScalaGenArrayOps with ScalaGenRangeOps with ScalaGenBooleanOps
       with ScalaGenVariables with ScalaGenIfThenElse with ScalaGenPrimitiveOps
       with ScalaGenPrint /*with LivenessOpt*/ { val IR: self.type = self }
@@ -50,8 +50,8 @@ class TestStencil extends FileDiffSuite {
   }
 
   trait Sliding extends DSL {
-    
-    def infix_sliding[T:Typ](n: Rep[Int], f: Rep[Int] => Rep[T]): Rep[Array[T]] = {
+
+    def infix_sliding[T: Typ: Nul](n: Rep[Int], f: Rep[Int] => Rep[T]): Rep[Array[T]] = {
       val a = NewArray[T](n)
       sliding(0,n)(i => a(i) = f(i))
       a
@@ -65,17 +65,17 @@ class TestStencil extends FileDiffSuite {
     def sliding(start: Rep[Int], end: Rep[Int])(f: Rep[Int] => Rep[Unit]): Rep[Unit]
 
   }
-  
+
   //trait SlidingExp extends Impl with Sliding {
   trait SlidingExp extends ArrayOpsExpOpt with NumericOpsExpOpt with PrimitiveOpsExpOpt
-      with OrderingOpsExpOpt with BooleanOpsExp 
+      with OrderingOpsExpOpt with BooleanOpsExp
       with EqualExpOpt with VariablesExpOpt with RangeOpsExp
       with IfThenElseExpOpt {
-    
-    object trans extends ForwardTransformer { 
+
+    object trans extends ForwardTransformer {
       val IR: SlidingExp.this.type = SlidingExp.this
     }
-    
+
     // some arithemetic rewrites
     override def int_plus(lhs: Exp[Int], rhs: Exp[Int])(implicit pos: SourceContext): Exp[Int] = ((lhs,rhs) match {
       case (Def(IntPlus(x:Exp[Int],Const(y:Int))), Const(z:Int)) => int_plus(x, unit(y+z)) // (x+y)+z --> x+(y+z)
@@ -102,34 +102,34 @@ class TestStencil extends FileDiffSuite {
       case (Def(NumericPlus(x:Exp[Int],Const(y:Int))), Const(z:Int)) => numeric_plus(x, unit(y-z)) // (x+y)-z --> x+(y-z)
       case _ => super.numeric_minus(lhs,rhs)
     }).asInstanceOf[Exp[T]]
-    
-    
+
+
     // stencil implementation
     def sliding(start: Rep[Int], end: Rep[Int])(f: Rep[Int] => Rep[Unit]): Rep[Unit] = {
       val i = fresh[Int]
-      
+
       val save = context // reset effect context later
-      
+
       // evaluate loop contents f(i)
       val (r0,stms0) = reifySubGraph(f(i))
-      
+
       val (((r1,stms1,subst1),(r2,stms2,subst2)), _) = reifySubGraph {
-        
+
         reflectSubGraph(stms0)
         context = save
-        
+
         // evaluate loop contents f(i+1)
         val ((r1,subst1),stms1) = reifySubGraph(trans.withSubstScope(i -> (i+1)) {
           stms0.foreach(s=>trans.traverseStm(s))
           (trans(r0), trans.subst)
         })
-        
+
 
         val ((r2,stms2,subst2), _) = reifySubGraph {
 
           reflectSubGraph(stms1)
           context = save
-          
+
           // evaluate loop contents f(i+2)
           val ((r2,subst2),stms2) = reifySubGraph(trans.withSubstScope(i -> (i+2)) {
             stms0.foreach(s=>trans.traverseStm(s))
@@ -139,15 +139,15 @@ class TestStencil extends FileDiffSuite {
         }
 
         println(subst1)
-        
+
         ((r1,stms1,subst1), (r2,stms2,subst2))
 
       }
 
       context = save
-      
+
       val defs = stms0.flatMap(_.lhs)
-      
+
       println("r0:")
       stms0.foreach(println)
 
@@ -156,9 +156,9 @@ class TestStencil extends FileDiffSuite {
 
       println("r2:")
       stms2.foreach(println)
-          
+
       println(subst1)
-        
+
 
       // find overlap syms: defined by f(i), used by f(i+1) and f(i+2)
 
@@ -182,7 +182,7 @@ class TestStencil extends FileDiffSuite {
 
       // build a variable for each overlap sym.
       // init variables by peeling first loop iteration.
-      
+
       if (end > start) {
 
         val (rX,substX) = trans.withSubstScope(i -> start) {
@@ -196,35 +196,35 @@ class TestStencil extends FileDiffSuite {
         println("will become var reads: " + overlap0)
         println("will become var writes: " + overlap1)
 
-      
+
         // now generate the loop
-      
+
         for (j <- (start + unit(1)) until end) {
-        
+
           // read the overlap variables
-        
+
           val reads = (overlap0 zip vars) map (p => (p._1, readVar(p._2)(p._1.tp,p._1.pos.head)))
-        
+
           println("var reads: " + reads)
-        
+
           // emit the transformed loop body
-        
+
           val (r,substY1) = trans.withSubstScope((reads:+(i->(j-unit(1)))): _*) {
             stms1.foreach(s=>trans.traverseStm(s))
             (trans(r1), trans.subst)
           }
-        
+
           // write the new values to the overlap vars
-        
+
           val writes = (overlap1 zip vars) map (p => (p._1, var_assign(p._2, substY1(p._1))(p._1.tp,p._1.pos.head)))
 
           println("var writes: " + writes)
         }
-      
+
       }
     }
-    
-    
+
+
   }
 
 
@@ -235,26 +235,26 @@ class TestStencil extends FileDiffSuite {
 
   def testStencil0 = withOutFileChecked(prefix+"stencil0") {
     trait Prog extends DSL {
-      
+
       // not actually sliding -- just to have a baseline reference
-      def infix_sliding[T:Typ](n: Rep[Int], f: Rep[Int] => Rep[T]): Rep[Array[T]] = {
+      def infix_sliding[T: Typ: Nul](n: Rep[Int], f: Rep[Int] => Rep[T]): Rep[Array[T]] = {
         val a = NewArray[T](n)
         (0 until n) foreach { i =>
           a(i) = f(i)
         }
         a
       }
-      
+
       def test(v: Rep[Array[Double]]) = {
 
         val n = 20
-        
+
         def compute(i: Rep[Int]) = 2.0 * i.toDouble + 3.0
-        
+
         val res = n sliding { i =>
           compute(i) + compute(i+1)
         }
-        
+
         res
       }
     }
@@ -267,13 +267,13 @@ class TestStencil extends FileDiffSuite {
       def test(v: Rep[Array[Double]]) = {
 
         val n = 20
-        
+
         def compute(i: Rep[Int]) = 2.0 * i.toDouble + 3.0
-        
+
         val res = n sliding { i =>
           compute(i) + compute(i+1)
         }
-        
+
         res
       }
     }
@@ -306,21 +306,21 @@ class TestStencil extends FileDiffSuite {
         val n = v.length
         val input = v
         val output = NewArray[Double](n)
-        
+
         // single iteration
 
         def a(j: Rep[Int]) = input(j)
-        
+
         def w(j: Rep[Int]) = a(j) * a(j+1)
-        
+
         // regular for loop
-        
+
         // result has 3 reads, 1 write, 4 flops = 32/4 bytes/flop
 
         for (i <- (1 until n-1)) {
           output(i) = a(i) - w(i) + w(i-1)
         }
-        
+
         output
       }
     }
@@ -334,21 +334,21 @@ class TestStencil extends FileDiffSuite {
         val n = v.length
         val input = v
         val output = NewArray[Double](n)
-        
+
         // single iteration
 
         def a(j: Rep[Int]) = input(j)
-        
+
         def w(j: Rep[Int]) = a(j) * a(j+1)
-        
+
         // sliding for loop
-        
+
         // result has 1 read, 1 write, 3 flops = 16/3 bytes/flop
 
         for (i <- (1 until n-1).sliding) {
           output(i) = a(i) - w(i) + w(i-1)
         }
-        
+
         output
       }
     }
@@ -363,23 +363,23 @@ class TestStencil extends FileDiffSuite {
         val n = v.length
         val input = v
         val output = NewArray[Double](n)
-        
+
         // perform two iterations at once
 
         def a(j: Rep[Int]) = input(j)
-        
+
         def w1(j: Rep[Int]) = a(j) * a(j+1)
 
         def wm(j: Rep[Int]) = a(j) - w1(j) + w1(j-1)
 
         def w2(j: Rep[Int]) = wm(j) * wm(j+1)
-        
+
         def b(j: Rep[Int]) = wm(j) - w2(j) + w2(j-1)
 
         // regular for loop
 
         // result has 5 reads, 1 write, 14 flops = 48/14 bytes/flop
-        
+
         for (i <- (2 until n-2)) {
           output(i) = b(i)
         }
@@ -396,23 +396,23 @@ class TestStencil extends FileDiffSuite {
         val n = v.length
         val input = v
         val output = NewArray[Double](n)
-        
+
         // perform two iterations at once
 
         def a(j: Rep[Int]) = input(j)
-        
+
         def w1(j: Rep[Int]) = a(j) * a(j+1)
 
         def wm(j: Rep[Int]) = a(j) - w1(j) + w1(j-1)
 
         def w2(j: Rep[Int]) = wm(j) * wm(j+1)
-        
+
         def b(j: Rep[Int]) = wm(j) - w2(j) + w2(j-1)
 
         // sliding for loop
-        
+
         // result has 1 read, 1 write, 6 flops = 16/6 bytes/flop
-        
+
         for (i <- (2 until n-2).sliding) {
           output(i) = b(i)
         }
@@ -422,5 +422,5 @@ class TestStencil extends FileDiffSuite {
     new Prog with Impl with SlidingExp
   }
 
- 
+
 }

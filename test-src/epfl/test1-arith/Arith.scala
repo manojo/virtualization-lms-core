@@ -19,7 +19,7 @@ trait Arith extends Base with LiftArith {
   //implicit def unit(x: Double): Rep[Double]
 
   implicit def intTyp: Typ[Int]
-  implicit def doubleTyp: Typ[Double] 
+  implicit def doubleTyp: Typ[Double]
 
   // aks: this is a workaround for the infix methods not intercepting after Typs were added everywhere
   implicit def intToArithOps(i: Int) = new arithOps(unit(i))
@@ -45,7 +45,7 @@ trait ArithExp extends Arith with BaseExp {
 
   implicit def intTyp: Typ[Int] = ManifestTyp(implicitly)
   implicit def doubleTyp: Typ[Double] = ManifestTyp(implicitly)
-  
+
   case class Plus(x: Exp[Double], y: Exp[Double]) extends Def[Double]
   case class Minus(x: Exp[Double], y: Exp[Double]) extends Def[Double]
   case class Times(x: Exp[Double], y: Exp[Double]) extends Def[Double]
@@ -55,8 +55,8 @@ trait ArithExp extends Arith with BaseExp {
   def infix_-(x: Exp[Double], y: Exp[Double])(implicit pos: SourceContext) = Minus(x, y)
   def infix_*(x: Exp[Double], y: Exp[Double])(implicit pos: SourceContext) = Times(x, y)
   def infix_/(x: Exp[Double], y: Exp[Double])(implicit pos: SourceContext) = Div(x, y)
-  
-  override def mirror[A:Typ](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+
+  override def mirror[A: Typ: Nul](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case Plus(x,y) => f(x) + f(y)
     case Minus(x,y) => f(x) - f(y)
     case Times(x,y) => f(x) * f(y)
@@ -102,7 +102,7 @@ trait ArithExpOpt extends ArithExp {
 trait ScalaGenArith extends ScalaGenBase {
   val IR: ArithExp
   import IR._
-  
+
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
     case Plus(a,b) =>  emitValDef(sym, "" + quote(a) + "+" + quote(b))
     case Minus(a,b) => emitValDef(sym, "" + quote(a) + "-" + quote(b))

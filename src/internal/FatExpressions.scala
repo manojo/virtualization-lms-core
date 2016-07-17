@@ -2,7 +2,7 @@ package scala.lms
 package internal
 
 trait FatExpressions extends Expressions {
-  
+
   abstract class FatDef
 
   //case class ThinDef(rhs: Def[Any]) extends FatDef
@@ -31,8 +31,8 @@ trait FatExpressions extends Expressions {
 
 
 
-  case class Combine(a: List[Exp[Any]]) extends Exp[Any]()(ManifestTyp(manifest[Any])) //TODO: get rid of. used by emitFatBlock
+//  case class Combine(a: List[Exp[Any]]) extends Exp[Any]()(ManifestTyp(manifest[Any])) //TODO: get rid of. used by emitFatBlock
 
   case class Forward[A](x: Exp[A]) extends Def[A] // TODO: get rid of. used by SimplifyTransform
-  
+
 }
